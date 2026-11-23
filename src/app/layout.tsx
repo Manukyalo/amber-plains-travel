@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 
 export const viewport: Viewport = {
   themeColor: "#0B0E0C",
@@ -82,7 +80,7 @@ export default function RootLayout({
     image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=85",
     description: "Mombasa-based bespoke East African tour operator curating private wildlife safaris and coastal expeditions.",
     url: "https://amberplains.co.ke",
-    telephone: "+254700123456",
+    telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_COMPANY_PHONE || "+254700123456",
     priceRange: "$$$$",
     address: {
       "@type": "PostalAddress",
@@ -125,10 +123,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
         />
       </head>
-      <body className="bg-safari-night text-safari-sand min-h-screen flex flex-col font-sans antialiased selection:bg-gold-400 selection:text-safari-night">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+      <body className="bg-safari-night text-safari-sand min-h-screen font-sans antialiased selection:bg-gold-400 selection:text-safari-night">
+        {children}
       </body>
     </html>
   );
