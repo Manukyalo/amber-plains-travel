@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -25,40 +25,59 @@ import {
 
 export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
+  const [isStandaloneAdmin, setIsStandaloneAdmin] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase();
+      const isStandalone =
+        host.startsWith("admin.") ||
+        host.startsWith("admin-") ||
+        host.includes("-admin.") ||
+        host.includes("admin-amber-plains") ||
+        process.env.NEXT_PUBLIC_STANDALONE_ADMIN === "true";
+      setIsStandaloneAdmin(isStandalone);
+    }
+  }, []);
+
+  const publicWebsiteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://amberplains.co.ke";
+
+  // Base prefix for links: on standalone domain, links can be "/costing" or "/admin/costing"
+  // Using "/admin" or relative links is completely supported because of our middleware
   const navGroups = [
     {
       group: "Command Center",
       links: [
-        { label: "Overview", href: "/admin", icon: <LayoutDashboard className="w-4 h-4" /> },
-        { label: "Bookings & CRM", href: "/admin/bookings", icon: <CalendarCheck className="w-4 h-4" />, badge: "4 Active" },
-        { label: "Costing & Pricing", href: "/admin/costing", icon: <Calculator className="w-4 h-4" /> },
-        { label: "Payments & Ledger", href: "/admin/payments", icon: <CreditCard className="w-4 h-4" /> },
+        { label: "Overview", href: "/admin", altHref: "/", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Bookings & CRM", href: "/admin/bookings", altHref: "/bookings", icon: <CalendarCheck className="w-4 h-4" />, badge: "4 Active" },
+        { label: "Costing & Pricing", href: "/admin/costing", altHref: "/costing", icon: <Calculator className="w-4 h-4" /> },
+        { label: "Payments & Ledger", href: "/admin/payments", altHref: "/payments", icon: <CreditCard className="w-4 h-4" /> },
       ],
     },
     {
       group: "Operations & Logistics",
       links: [
-        { label: "Supplier Contracts", href: "/admin/suppliers", icon: <Building2 className="w-4 h-4" /> },
-        { label: "Packages & Routes", href: "/admin/packages", icon: <Layers className="w-4 h-4" /> },
-        { label: "4x4 Safari Fleet", href: "/admin/fleet", icon: <Truck className="w-4 h-4" /> },
-        { label: "Guides & Drivers", href: "/admin/guides", icon: <Users className="w-4 h-4" /> },
-        { label: "Merchandise", href: "/admin/merchandise", icon: <ShoppingBag className="w-4 h-4" /> },
+        { label: "Supplier Contracts", href: "/admin/suppliers", altHref: "/suppliers", icon: <Building2 className="w-4 h-4" /> },
+        { label: "Packages & Routes", href: "/admin/packages", altHref: "/packages", icon: <Layers className="w-4 h-4" /> },
+        { label: "4x4 Safari Fleet", href: "/admin/fleet", altHref: "/fleet", icon: <Truck className="w-4 h-4" /> },
+        { label: "Guides & Drivers", href: "/admin/guides", altHref: "/guides", icon: <Users className="w-4 h-4" /> },
+        { label: "Merchandise", href: "/admin/merchandise", altHref: "/merchandise", icon: <ShoppingBag className="w-4 h-4" /> },
       ],
     },
     {
       group: "Intelligence & Growth",
       links: [
-        { label: "Website CMS & App", href: "/admin/cms", icon: <Globe className="w-4 h-4" /> },
-        { label: "AI Receptionist", href: "/admin/receptionist", icon: <PhoneCall className="w-4 h-4" />, badge: "Live" },
-        { label: "Website Hunter", href: "/admin/hunter", icon: <Search className="w-4 h-4" /> },
-        { label: "SEO Engine", href: "/admin/seo", icon: <LineChart className="w-4 h-4" /> },
+        { label: "Website CMS & App", href: "/admin/cms", altHref: "/cms", icon: <Globe className="w-4 h-4" /> },
+        { label: "AI Receptionist", href: "/admin/receptionist", altHref: "/receptionist", icon: <PhoneCall className="w-4 h-4" />, badge: "Live" },
+        { label: "Website Hunter", href: "/admin/hunter", altHref: "/hunter", icon: <Search className="w-4 h-4" /> },
+        { label: "SEO Engine", href: "/admin/seo", altHref: "/seo", icon: <LineChart className="w-4 h-4" /> },
       ],
     },
     {
       group: "Governance",
       links: [
-        { label: "Reports & Settings", href: "/admin/settings", icon: <Settings className="w-4 h-4" /> },
+        { label: "Reports & Settings", href: "/admin/settings", altHref: "/settings", icon: <Settings className="w-4 h-4" /> },
       ],
     },
   ];
@@ -68,7 +87,7 @@ export const AdminSidebar: React.FC = () => {
       <div>
         {/* Brand Header */}
         <div className="p-6 border-b border-safari-border flex items-center justify-between">
-          <Link href="/admin" className="flex flex-col">
+          <Link href={isStandaloneAdmin ? "/" : "/admin"} className="flex flex-col">
             <span className="font-serif text-xl text-white font-normal tracking-wide">
               Amber Plains
             </span>
@@ -89,13 +108,19 @@ export const AdminSidebar: React.FC = () => {
               {group.links.map((link) => {
                 const isActive =
                   link.href === "/admin"
-                    ? pathname === "/admin"
-                    : pathname.startsWith(link.href);
+                    ? pathname === "/admin" || pathname === "/"
+                    : pathname === link.href ||
+                      pathname.startsWith(link.href) ||
+                      pathname === link.altHref ||
+                      pathname.startsWith(`${link.altHref}/`);
+
+                // Link target adapts to standalone admin mode
+                const targetHref = isStandaloneAdmin ? link.altHref : link.href;
 
                 return (
                   <Link
                     key={link.href}
-                    href={link.href}
+                    href={targetHref}
                     className={`flex items-center justify-between px-3 py-2 rounded text-xs transition-colors ${
                       isActive
                         ? "bg-gold-400/15 text-gold-300 font-semibold border border-gold-400/40"
@@ -124,16 +149,17 @@ export const AdminSidebar: React.FC = () => {
 
       {/* Footer Return Link */}
       <div className="p-4 border-t border-safari-border bg-safari-card/40">
-        <Link
-          href="/"
+        <a
+          href={publicWebsiteUrl}
           target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center justify-between px-3 py-2 text-xs font-mono text-safari-sand/70 hover:text-gold-300 hover:bg-safari-card rounded transition-colors"
         >
           <span className="flex items-center gap-2">
             <Compass className="w-4 h-4 text-gold-400" /> Public Website
           </span>
           <ArrowUpRight className="w-3.5 h-3.5" />
-        </Link>
+        </a>
       </div>
     </aside>
   );
