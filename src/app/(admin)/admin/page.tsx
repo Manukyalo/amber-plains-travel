@@ -187,17 +187,16 @@ export default function AdminOverviewPage() {
                         </td>
                         <td className="py-3.5 px-4">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${
-                              currentStage === "confirmed"
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${currentStage === "confirmed"
                                 ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
                                 : currentStage === "in_safari"
-                                ? "bg-blue-950 text-blue-300 border border-blue-500/40 animate-pulse font-semibold"
-                                : currentStage === "completed"
-                                ? "bg-zinc-800 text-zinc-300 border border-zinc-600/40"
-                                : currentStage === "deposit_pending"
-                                ? "bg-amber-950 text-amber-300 border border-amber-500/40"
-                                : "bg-safari-night text-safari-sand/70 border border-safari-border"
-                            }`}
+                                  ? "bg-blue-950 text-blue-300 border border-blue-500/40 animate-pulse font-semibold"
+                                  : currentStage === "completed"
+                                    ? "bg-zinc-800 text-zinc-300 border border-zinc-600/40"
+                                    : currentStage === "deposit_pending"
+                                      ? "bg-amber-950 text-amber-300 border border-amber-500/40"
+                                      : "bg-safari-night text-safari-sand/70 border border-safari-border"
+                              }`}
                           >
                             {currentStage.replace("_", " ")}
                           </span>

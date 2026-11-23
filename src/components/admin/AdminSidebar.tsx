@@ -131,8 +131,8 @@ export const AdminSidebar: React.FC = () => {
                     key={link.href}
                     href={targetHref}
                     className={`flex items-center justify-between px-3 py-2 rounded text-xs transition-colors ${isActive
-                        ? "bg-gold-400/15 text-gold-300 font-semibold border border-gold-400/40"
-                        : "text-safari-sand/80 hover:bg-safari-card hover:text-white"
+                      ? "bg-gold-400/15 text-gold-300 font-semibold border border-gold-400/40"
+                      : "text-safari-sand/80 hover:bg-safari-card hover:text-white"
                       }`}
                   >
                     <div className="flex items-center gap-2.5">

@@ -61,40 +61,34 @@ export const AdminHeader: React.FC = () => {
       {/* Left: Operational telemetry badges */}
       <div className="flex items-center gap-3">
         <div
-          className={`hidden md:flex items-center gap-2 px-2.5 py-1 rounded bg-safari-card border border-safari-border text-[11px] font-mono ${
-            isTelephonyConfigured ? "text-safari-sand/80" : "text-safari-sand/50"
-          }`}
+          className={`hidden md:flex items-center gap-2 px-2.5 py-1 rounded bg-safari-card border border-safari-border text-[11px] font-mono ${isTelephonyConfigured ? "text-safari-sand/80" : "text-safari-sand/50"
+            }`}
         >
           <PhoneCall
-            className={`w-3.5 h-3.5 ${
-              isTelephonyConfigured ? "text-emerald-400" : "text-amber-500/70"
-            }`}
+            className={`w-3.5 h-3.5 ${isTelephonyConfigured ? "text-emerald-400" : "text-amber-500/70"
+              }`}
           />
           <span>{isTelephonyConfigured ? "Telephony: Online" : "Telephony: Not Connected"}</span>
         </div>
 
         <div
-          className={`hidden md:flex items-center gap-2 px-2.5 py-1 rounded bg-safari-card border border-safari-border text-[11px] font-mono ${
-            isPaymentsConfigured ? "text-safari-sand/80" : "text-safari-sand/50"
-          }`}
+          className={`hidden md:flex items-center gap-2 px-2.5 py-1 rounded bg-safari-card border border-safari-border text-[11px] font-mono ${isPaymentsConfigured ? "text-safari-sand/80" : "text-safari-sand/50"
+            }`}
         >
           <CreditCard
-            className={`w-3.5 h-3.5 ${
-              isPaymentsConfigured ? "text-gold-400" : "text-safari-sand/40"
-            }`}
+            className={`w-3.5 h-3.5 ${isPaymentsConfigured ? "text-gold-400" : "text-safari-sand/40"
+              }`}
           />
           <span>{isPaymentsConfigured ? "M-Pesa / Stripe: Active" : "Payments: Standby / Offline"}</span>
         </div>
 
         <div
-          className={`hidden lg:flex items-center gap-2 px-2.5 py-1 rounded bg-safari-card border border-safari-border text-[11px] font-mono ${
-            isAmrefConfigured ? "text-safari-sand/80" : "text-safari-sand/50"
-          }`}
+          className={`hidden lg:flex items-center gap-2 px-2.5 py-1 rounded bg-safari-card border border-safari-border text-[11px] font-mono ${isAmrefConfigured ? "text-safari-sand/80" : "text-safari-sand/50"
+            }`}
         >
           <HeartPulse
-            className={`w-3.5 h-3.5 ${
-              isAmrefConfigured ? "text-rose-400" : "text-safari-sand/40"
-            }`}
+            className={`w-3.5 h-3.5 ${isAmrefConfigured ? "text-rose-400" : "text-safari-sand/40"
+              }`}
           />
           <span>{isAmrefConfigured ? "AMREF SOS: 24/7 Link" : "AMREF SOS: Direct Dispatch"}</span>
         </div>
@@ -133,11 +127,10 @@ export const AdminHeader: React.FC = () => {
                     setActiveRole(r.role);
                     setRoleMenuOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 rounded text-xs flex items-center justify-between ${
-                    activeRole === r.role
+                  className={`w-full text-left px-3 py-2 rounded text-xs flex items-center justify-between ${activeRole === r.role
                       ? "bg-gold-400/15 text-gold-300 font-semibold"
                       : "text-safari-sand/80 hover:bg-safari-night"
-                  }`}
+                    }`}
                 >
                   <span>{r.label}</span>
                   {activeRole === r.role && <Check className="w-3.5 h-3.5 text-gold-400" />}

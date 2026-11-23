@@ -171,11 +171,10 @@ export default function AdminCmsPage() {
                 <button
                   type="button"
                   onClick={() => setIsStoreLive(!isStoreLive)}
-                  className={`px-4 py-1.5 rounded text-xs font-mono uppercase transition-colors ${
-                    isStoreLive
+                  className={`px-4 py-1.5 rounded text-xs font-mono uppercase transition-colors ${isStoreLive
                       ? "bg-emerald-600 text-white font-bold"
                       : "bg-amber-600 text-white font-bold"
-                  }`}
+                    }`}
                 >
                   {isStoreLive ? "Live on Stores" : "Coming Soon Mode"}
                 </button>
