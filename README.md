@@ -1,164 +1,95 @@
-# Amber Plains Travel — Phase 1: Public Digital Platform
+# Amber Plains Travel — Platform Architecture & Documentation
 
-A high-performance digital platform for **Amber Plains Travel Ltd**, a premier Mombasa-based tour operator specializing in bespoke East African safaris that connect the Swahili coast with the interior wilderness of Tsavo, Amboseli, and the Maasai Mara.
-
-Built with an editorial aesthetic inspired by fine safari journals: cinematic full-bleed wildlife photography, minimal transparent navigation, elegant serif typography, restrained gold actions, and an unhurried luxury travel atmosphere.
+A digital operating platform for **Amber Plains Travel Ltd**, a Mombasa-based luxury tour operator specializing in bespoke East African safaris that bridge Kenya’s Swahili coast with the interior wilderness of Tsavo, Amboseli, and the Maasai Mara.
 
 ---
 
-## 1. Architecture & Tech Stack
+## 1. System Overview
 
-```
-amber-plains-travel/
-├── src/
-│   ├── app/                    # Next.js 15 App Router (SSR, SSG, Metadata & Dynamic APIs)
-│   │   ├── api/                # API Route handlers (Zod validation, rate limiting, anti-spam)
-│   │   │   ├── enquiry/        # Safari tailor-made booking enquiry endpoint
-│   │   │   └── app-notify/     # VIP guest app launch waitlist notification endpoint
-│   │   ├── safaris/            # Safari listing & [slug] dynamic package detail pages
-│   │   ├── destinations/       # Destination index & [slug] regional pages
-│   │   ├── experiences/        # Travel styles & [slug] experiential pages
-│   │   ├── gallery/            # Curated visual dispatches with keyboard-operable lightbox
-│   │   ├── journal/            # Travel journal & [slug] editorial essays
-│   │   ├── about/              # Mombasa heritage, guiding fellowship & fleet standards
-│   │   ├── contact/            # Interactive tailor-made expedition planner
-│   │   ├── app/                # Dedicated guest app landing with branded QR generator
-│   │   ├── privacy/            # Kenya DPA (2019) & GDPR privacy notice
-│   │   ├── terms/              # KATO standard booking terms & cancellation schedule
-│   │   ├── trust-and-safety/   # AMREF Flying Doctors, vehicle specs & wildlife ethics
-│   │   ├── sitemap.ts          # Automated dynamic XML sitemap
-│   │   └── robots.ts           # Search engine crawler policies
-│   ├── components/             # Reusable UI & Layout Components
-│   │   ├── layout/             # Navbar (transparent/frosted), Footer
-│   │   ├── ui/                 # SectionHeading, Button, Lightbox, Badges
-│   │   ├── home/               # HeroSection, FeaturedPackages, DestinationsDiscovery, etc.
-│   │   ├── safaris/            # PackageCard, PackageFilterBar, PackageItineraryAccordion
-│   │   ├── enquiry/            # EnquiryForm with Zod schema validation & honeypot
-│   │   ├── gallery/            # GalleryClient with category filtering
-│   │   └── app/                # QrCodeCard (SVG/PNG generator) & AppNotifyForm
-│   ├── services/               # Data-access service boundary (Phase 2 CMS ready)
-│   │   ├── packageService.ts
-│   │   ├── destinationService.ts
-│   │   ├── experienceService.ts
-│   │   ├── galleryService.ts
-│   │   ├── journalService.ts
-│   │   ├── testimonialService.ts
-│   │   ├── siteSettingsService.ts
-│   │   └── qrService.ts        # QR generation encoding stable first-party company URL
-│   ├── data/                   # Typed mock data layer with strict contracts
-│   └── types/                  # Centralized TypeScript definitions & Zod schemas
-├── public/                     # Public static assets
-└── .env.example                # Documented configuration variables
-```
-
-### Core Technologies
-- **Framework:** Next.js 15 (App Router, Static Site Generation for all packages/destinations)
-- **Language:** TypeScript 5 (Strict mode enabled, zero `any` assertions)
-- **Styling:** Tailwind CSS 3 with custom editorial safari palette (Gold `#C5A059`, Safari Night `#0B0E0C`, Safari Cream `#FAF7F2`)
-- **Typography:** Editorial Serif (`Cormorant Garamond`) paired with modern geometric Sans (`Plus Jakarta Sans`)
-- **Icons:** Lucide React
-- **Validation & Anti-Spam:** Zod runtime validation, silent honeypot trap, in-memory IP sliding-window rate limiting
-- **QR Code Engine:** `qrcode` library supporting both PNG raster and scalable vector SVG export
+The platform is designed in two complementary layers:
+1. **Phase 1: Public Marketing & Package Discovery Website**
+   - High-contrast editorial luxury serif typography (`Cormorant Garamond`), full-bleed cinematic safari photography, minimal navigation, structured package discovery, interactive itineraries, travel styles, and guest companion app promotion.
+2. **Phase 2: Admin Dashboard & Business Control Centre**
+   - High-density operating interface and CMS powering bookings, costing/profit protection, fleet allocation, supplier contract management, multi-gateway payments, AI voice telephony lead capture, competitor intelligence, and SEO engine.
 
 ---
 
-## 2. Routes Directory & Features
+## 2. Phase 2 Admin Dashboard Modules (`/admin`)
 
-| Route | Purpose | Key Capabilities |
+| Module | Route | Operational Scope |
 | :--- | :--- | :--- |
-| `/` | **Home** | Cinematic hero, featured packages, destination discovery, travel styles, curated gallery preview, brand story, verified testimonials, guest app promotion, enquiry CTA. |
-| `/safaris` | **Packages Listing** | Multi-faceted client filter (Destination, Duration [Short/Classic/Odyssey], Travel Style, Search Keyword) with live count and reset. |
-| `/safaris/[slug]` | **Package Detail** | Day-by-day accordion itinerary, lodge notes, meal plans, inclusions, exclusions, seasonal rates table, FAQs, JSON-LD `TouristTrip` schema, direct enquiry form. |
-| `/destinations` | **Destinations Index** | Editorial overview of Tsavo East/West, Amboseli, Maasai Mara, and the Swahili Coast. |
-| `/destinations/[slug]` | **Destination Detail** | Climate, prime seasons, transit time from Mombasa, wildlife highlights, and linked safari packages. |
-| `/experiences` | **Travel Styles** | Bush-to-Beach combinations, Private 4x4 Cruisers, Dawn Hot Air Balloon Safaris, Guided Conservation Walks. |
-| `/experiences/[slug]` | **Experience Detail** | In-depth philosophy, suitability breakdown, and linked safari itineraries. |
-| `/gallery` | **Visual Dispatches** | Category filters (`wildlife`, `landscapes`, `coastal`, `camps`, `culture`), photographer credits, camera settings, accessible keyboard lightbox (Esc, Left/Right arrows). |
-| `/journal` | **Travel Journal** | Curated essays on wildlife movements, the Great Migration, and coastal culture. |
-| `/journal/[slug]` | **Journal Article** | High-readability editorial layout, reading times, author profiles. |
-| `/about` | **About Us** | Mombasa heritage (est. 2014), KPSGA certified guiding fellowship, 4x4 fleet specifications, community conservancy stewardship. |
-| `/contact` | **Contact & Planner** | Comprehensive tailor-made enquiry form, Mombasa HQ address, Diani Beach lounge, WhatsApp direct line, operating hours. |
-| `/app` | **Guest Companion App** | Branded QR code encoding stable first-party company link, downloadable as high-res PNG & SVG vector for lodge print collateral, device detection, "Coming Soon" notification form. |
-| `/privacy` | **Privacy Policy** | Kenya Data Protection Act (2019) & GDPR compliance, strict confidential handling of guest data. |
-| `/terms` | **Booking Conditions** | KATO bonded deposit schedule (30% deposit, 70% at 60 days), cancellation terms, force majeure. |
-| `/trust-and-safety` | **Wilderness Safety** | AMREF Flying Doctors 24/7 evacuation, 42-point fleet inspection, armed ranger walk protocols, ethical viewing code. |
-| `/sitemap.xml` | **XML Sitemap** | Dynamic sitemap generated at build time covering all static and dynamic paths. |
-| `/robots.txt` | **Robots.txt** | Crawler guidance with canonical sitemap URL. |
+| **Command Center Overview** | `/admin` | Real-time booking pipeline, revenue metrics ($34,700 confirmed), outstanding balances, upcoming field departures calendar, fleet utilization, and actionable operational alerts. |
+| **Website CMS & App Distribution** | `/admin/cms` | Direct CMS management for hero titles, editorial copy, package publication, official iOS/Android store URLs, app live status toggling, and downloadable stable QR artwork (SVG & PNG). |
+| **Packages & Itineraries** | `/admin/packages` | Catalog portfolio management, day-by-day itineraries, guest limits, difficulty levels, seasonal availability, and public link inspection. |
+| **Bookings & Client CRM** | `/admin/bookings` | Lead pipeline stages (`new_inquiry`, `scoping`, `quote_drafted`, `quote_sent`, `deposit_pending`, `confirmed`, `in_safari`, `completed`, `cancelled`), guest profiles, confidential staff communications log, and WhatsApp direct link. |
+| **Supplier Contracts & Net Rates** | `/admin/suppliers` | Hotels/lodges (Satao Camp Tsavo, Tortilis Camp Amboseli), aviation charters (Safarilink), net room rates, room categories, meal plans, seasons, blackout dates, and PDF contract review verification. |
+| **Costing & Pricing Engine** | `/admin/costing` | Deterministic margin/markup calculator, separate cost categories, configurable contingency buffer (e.g. 5%), markup vs gross margin formulas, minimum profit threshold gate (e.g. 18%), and confidential staff breakdown vs guest-facing quote generator. |
+| **4x4 Safari Fleet** | `/admin/fleet` | Custom extended Land Cruisers (KDE 412X, KDG 893L), window seat capacities, equipment (inverters, fridges, pop-up roofs), mileage, service intervals, and trip scheduling. |
+| **Drivers & Guides** | `/admin/guides` | KPSGA certified naturalists (Gold, Silver, Bronze), license numbers, language proficiencies, assignment status, and Driver App link. |
+| **Payments & Treasury** | `/admin/payments` | Multi-gateway state machine (`pending` -> `processing` -> `succeeded` / `failed` -> `refunded`), idempotency key verification, provider references (Stripe, M-Pesa, IntaSend), and immutable audit ledger. |
+| **Safari Merchandise** | `/admin/merchandise` | Gear inventory (wide-brim safari hats, canvas photography vests, bush canteens), cost/retail tracking, stock alerts, and fulfillment. |
+| **AI Receptionist & Telephony** | `/admin/receptionist` | Telephony integration (Twilio / Africa's Talking / SIP), missed-call overflow, caller consent verification, automated structured intent extraction (dates, party, budget), draft quote staging, and human escalation. |
+| **Website Hunter** | `/admin/hunter` | Competitor watchlist (Pollman's, Micato), ethical public crawls (respects robots.txt), observed pricing ranges, separated facts vs opportunities vs AI recommendations with effort/impact scoring. |
+| **SEO Engine** | `/admin/seo` | Search Console status, audited URLs, meta title/description length monitoring, structured Schema.org (`TravelAgency` and `TouristTrip`), and organic keyword rankings. |
+| **Governance & Settings** | `/admin/settings` | Role-Based Access Control (Super Admin, Safari Director, Operations, Finance, Guide), base quoting currency (USD, KES, EUR, GBP), Kenya statutory levies (VAT 16%, Catering Levy 2%), and immutable security audit stream. |
 
 ---
 
-## 3. Guest App Discovery & QR Architecture
+## 3. Costing Engine & Profit Protection Formula
 
-1. **Stable First-Party URL:** The QR code strictly encodes `https://amberplains.co.ke/app` (configured via `NEXT_PUBLIC_APP_DOWNLOAD_URL`), **never** a temporary Expo URL, hardcoded store URL, or private guest token.
-2. **Downloadable Formats:**
-   - **Vector SVG:** Scalable vector asset for high-resolution print collateral (lodge welcome folios, vehicle seat tags, safari luggage tags).
-   - **Raster PNG:** Sized for digital use and email attachments.
-3. **Phase 1/2 "Coming Soon" State:**
-   - Detects whether the visitor is on iOS, Android, or Desktop.
-   - Shows transparent status indicating the Expo native guest app is in preparation for Phase 3.
-   - Consent-based VIP notify-me form (`/api/app-notify`) capturing email and preferred platform.
-4. **Phase 3 Activation:** When the app is approved and published on the Apple App Store and Google Play, simply populate `NEXT_PUBLIC_APPLE_STORE_URL` and `NEXT_PUBLIC_GOOGLE_PLAY_URL` in `.env.local`. The `/app` page will automatically surface the live store download badges.
+The platform strictly separates **Markup Rate** from **Gross Margin**:
+- **Markup Pricing Formula:**
+  $$\text{Selling Price} = \text{Effective Cost} \times (1 + \text{Markup Rate})$$
+- **Gross Margin Formula:**
+  $$\text{Gross Margin} = \frac{\text{Selling Price} - \text{Effective Cost}}{\text{Selling Price}}$$
+
+> **Important:** A 28% markup yields a **21.88% gross margin**.  
+> If an operator enters a target gross margin, the engine solves for markup:
+> $$\text{Markup Rate} = \frac{\text{Desired Margin}}{1 - \text{Desired Margin}}$$
+
+### Profitability Threshold Enforcement
+- Enforces a configurable minimum gross margin (default: **18%**).
+- Quotes falling below threshold trigger explicit warnings and require Director sign-off before committing.
+- Generates a **confidential staff breakdown** displaying net rates and supplier contract versions alongside a **guest-friendly quote** that scrubs confidential supplier rates.
 
 ---
 
-## 4. Setup & Production Build Instructions
+## 4. Payment System Integrity
 
-### Prerequisites
-- Node.js `v18.18+` or `v20+` (tested on Node `v24.14.0`)
-- npm `v10+` or `v11+`
+- **Idempotency Everywhere:** Every payment initiation carries a unique `idempotencyKey`. Duplicate submissions return cached idempotent records without double-charging.
+- **Never Trust Client-Side Amounts:** Transaction values are calculated and verified server-side.
+- **Webhook-Driven State:** Payment status is only updated from verified provider callbacks (Stripe, M-Pesa Express, IntaSend), never from optimistic frontend responses.
+- **State Machine:** Explicit enum states (`pending`, `processing`, `succeeded`, `failed`, `refunded`) with timestamps.
+- **Integer Currency:** All money math is handled in integer cents to prevent floating-point roundoff issues.
 
-### 1. Environment Configuration
-Copy `.env.example` to `.env.local`:
+---
+
+## 5. Development & Production Build
+
+### Setup
 ```bash
+# Clone the repository
+git clone https://github.com/Manukyalo/amber-plains-travel.git
+cd amber-plains-travel
+
+# Install dependencies
+npm install
+
+# Configure environment
 cp .env.example .env.local
 ```
 
-Configure your domain coordinates in `.env.local`:
-```ini
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_APP_DOWNLOAD_URL=http://localhost:3000/app
-NEXT_PUBLIC_COMPANY_NAME="Amber Plains Travel Ltd"
-NEXT_PUBLIC_COMPANY_PHONE="+254 700 123 456"
-NEXT_PUBLIC_COMPANY_WHATSAPP="+254 700 123 456"
-NEXT_PUBLIC_COMPANY_EMAIL="safaris@amberplains.co.ke"
-```
-
-### 2. Development Server
+### Run Locally
 ```bash
+# Start Next.js development server
 npm run dev
-```
-Open `http://localhost:3000` in your browser.
 
-### 3. Type Checking
-```bash
+# Run TypeScript type check
 npm run typecheck
-```
 
-### 4. Production Build
-```bash
+# Execute optimized production build (53 pages)
 npm run build
 npm run start
 ```
-The production build compiles **35 static and dynamic pages** with zero errors.
-
----
-
-## 5. Security & Anti-Spam Architecture
-
-- **Zod Runtime Validation:** Both `/api/enquiry` and `/api/app-notify` enforce strict input types, bounds, and string constraints before processing.
-- **Honeypot Trap:** Forms contain an invisible honeypot field (`honeypot`). Submissions containing automated bot filler are silently throttled with zero exposure.
-- **Sliding-Window Rate Limiting:** In-memory request tracking throttles rapid spam submissions per client IP, returning HTTP `429 Too Many Requests`.
-- **Zero Exposed Inquiries:** Submitted guest inquiries are processed server-side; guest PII is never returned in client API payloads.
-- **Zero Committed Secrets:** All credentials, notification targets, and store links live in environment variables.
-
----
-
-## 6. Recommended Next Steps (Phases 2 & 3)
-
-1. **Phase 2 — Admin Dashboard & Headless CMS:**
-   - Replace the mock data layer in `src/data/` with database queries (Supabase / PostgreSQL) using the existing service functions in `src/services/`.
-   - Build administrative CRUD workflows for safari packages, seasonal pricing, gallery image uploads, and inquiry triage.
-2. **Phase 3 — Expo Guest Companion App:**
-   - Scaffold the React Native / Expo guest mobile app utilizing the existing TypeScript contracts from `src/types/index.ts`.
-   - Implement offline caching (TanStack Query + SQLite / AsyncStorage) for itineraries and maps.
-   - Update `NEXT_PUBLIC_APPLE_STORE_URL` and `NEXT_PUBLIC_GOOGLE_PLAY_URL` in production to transition the `/app` route from "Coming Soon" to active store redirects.
+- **Public Marketing Website:** [http://localhost:3000](http://localhost:3000)
+- **Admin Control Center:** [http://localhost:3000/admin](http://localhost:3000/admin)
