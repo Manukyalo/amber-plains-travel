@@ -4,30 +4,53 @@ import React from "react";
 import Link from "next/link";
 import {
   DollarSign,
-  Calendar,
   AlertTriangle,
   Clock,
   ArrowRight,
   TrendingUp,
   Truck,
-  PhoneCall,
-  CheckCircle,
-  FileText,
-  UserCheck,
+  CalendarCheck,
 } from "lucide-react";
 import {
   mockBookings,
   mockVehicles,
+  mockGuides,
   mockCallEvents,
-  mockMerchandise,
+  mockTransactions,
 } from "@/data/adminMockData";
+import {
+  TODAY_ISO,
+  computeBookingStage,
+  isBookingInSafariToday,
+  isBookingActivePipeline,
+  getUpcomingDepartures,
+} from "@/utils/bookingDates";
 
 export default function AdminOverviewPage() {
-  const activeBookings = mockBookings.filter((b) => b.stage !== "completed" && b.stage !== "cancelled");
-  const confirmedBookings = mockBookings.filter((b) => b.stage === "confirmed" || b.stage === "in_safari");
-  const totalRevenueUsd = confirmedBookings.reduce((sum, b) => sum + b.totalSellingPriceUsd, 0);
-  const totalBalanceDueUsd = mockBookings.reduce((sum, b) => sum + b.balanceDueUsd, 0);
-  const vehiclesOnSafari = mockVehicles.filter((v) => v.status === "on_safari").length;
+  // Real revenue calculated from immutable succeeded transaction rows
+  const totalRevenueUsd = mockTransactions
+    .filter((t) => t.status === "succeeded")
+    .reduce((sum, t) => sum + t.amountCents / 100, 0);
+
+  // Outstanding balances from all active (uncompleted / uncancelled) bookings
+  const activeBookings = mockBookings.filter((b) => isBookingActivePipeline(b, TODAY_ISO));
+  const totalBalanceDueUsd = activeBookings.reduce((sum, b) => sum + b.balanceDueUsd, 0);
+
+  // In-field safari cruisers calculation:
+  // Count vehicles assigned to bookings whose start_date <= today <= end_date
+  const inSafariBookings = mockBookings.filter((b) => isBookingInSafariToday(b, TODAY_ISO));
+  const inSafariVehicleIds = new Set(
+    inSafariBookings.map((b) => b.assignedVehicleId).filter(Boolean)
+  );
+  const activeFleetVehicles = mockVehicles.filter(
+    (v) => v.status !== "scheduled_maintenance"
+  );
+  const vehiclesOnSafariToday = mockVehicles.filter((v) =>
+    inSafariVehicleIds.has(v.id)
+  ).length;
+
+  // Upcoming field departures (start_date >= today, sorted ascending, limit 5)
+  const upcomingDepartures = getUpcomingDepartures(mockBookings, TODAY_ISO, 5);
   const missedCalls = mockCallEvents.filter((c) => c.status === "missed").length;
 
   return (
@@ -36,7 +59,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-safari-border">
         <div>
           <span className="text-xs font-mono uppercase tracking-widest text-gold-400">
-            Mombasa Headquarters Duty Desk
+            Mombasa Headquarters Duty Desk · Operations Date: {TODAY_ISO}
           </span>
           <h1 className="font-serif text-3xl font-normal text-white mt-1">
             Operations & Control Overview
@@ -63,14 +86,14 @@ export default function AdminOverviewPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="p-5 bg-safari-card border border-safari-border rounded-lg space-y-2">
           <div className="flex items-center justify-between text-xs font-mono text-safari-sand/60">
-            <span>CONFIRMED REVENUE</span>
+            <span>SETTLED REVENUE</span>
             <DollarSign className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="font-serif text-3xl text-white">
-            ${totalRevenueUsd.toLocaleString()}
+            ${totalRevenueUsd.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </div>
           <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5" /> +18.4% vs last quarter
+            <TrendingUp className="w-3.5 h-3.5" /> Sourced from verified transaction ledger
           </span>
         </div>
 
@@ -80,9 +103,11 @@ export default function AdminOverviewPage() {
             <Clock className="w-4 h-4 text-gold-400" />
           </div>
           <div className="font-serif text-3xl text-gold-300">
-            ${totalBalanceDueUsd.toLocaleString()}
+            ${totalBalanceDueUsd.toLocaleString(undefined, { minimumFractionDigits: 0 })}
           </div>
-          <span className="text-[11px] text-safari-sand/60">Across 3 active pipeline bookings</span>
+          <span className="text-[11px] text-safari-sand/60">
+            Across {activeBookings.length} active pipeline bookings
+          </span>
         </div>
 
         <div className="p-5 bg-safari-card border border-safari-border rounded-lg space-y-2">
@@ -91,9 +116,11 @@ export default function AdminOverviewPage() {
             <Truck className="w-4 h-4 text-gold-400" />
           </div>
           <div className="font-serif text-3xl text-white">
-            {vehiclesOnSafari} / {mockVehicles.length}
+            {vehiclesOnSafariToday} / {activeFleetVehicles.length}
           </div>
-          <span className="text-[11px] text-safari-sand/60">Cruisers currently deep in field</span>
+          <span className="text-[11px] text-safari-sand/60">
+            Cruisers in safari today ({activeFleetVehicles.length} active in fleet)
+          </span>
         </div>
 
         <div className="p-5 bg-safari-card border border-safari-border rounded-lg space-y-2">
@@ -117,7 +144,9 @@ export default function AdminOverviewPage() {
             <div className="p-5 border-b border-safari-border flex items-center justify-between">
               <div>
                 <h3 className="font-serif text-lg text-white">Active Safari Pipeline</h3>
-                <p className="text-xs text-safari-sand/60">Current bookings moving through operational stages</p>
+                <p className="text-xs text-safari-sand/60">
+                  Real date-driven status (Current Date: {TODAY_ISO})
+                </p>
               </div>
               <Link
                 href="/admin/bookings"
@@ -140,47 +169,52 @@ export default function AdminOverviewPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-safari-border text-safari-sand/90">
-                  {mockBookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-safari-night/40 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-gold-300 font-semibold">
-                        {b.referenceCode}
-                      </td>
-                      <td className="py-3.5 px-4 font-serif text-sm text-white">
-                        {b.guest.fullName}
-                        <span className="block text-[10px] font-mono text-safari-sand/50">
-                          {b.guest.country} · {b.adultsCount} Adults
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-[11px]">
-                        {b.startDate} ({b.durationDays}D)
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${
-                            b.stage === "confirmed"
-                              ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
-                              : b.stage === "in_safari"
-                              ? "bg-blue-950 text-blue-300 border border-blue-500/40 animate-pulse"
-                              : b.stage === "deposit_pending"
-                              ? "bg-amber-950 text-amber-300 border border-amber-500/40"
-                              : "bg-safari-night text-safari-sand/70 border border-safari-border"
-                          }`}
-                        >
-                          {b.stage.replace("_", " ")}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-serif text-sm text-white">
-                        ${b.totalSellingPriceUsd.toLocaleString()}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono text-[11px]">
-                        {b.depositPaid ? (
-                          <span className="text-emerald-400">✓ Paid</span>
-                        ) : (
-                          <span className="text-amber-400">Due ${b.depositAmountUsd.toLocaleString()}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {mockBookings.map((b) => {
+                    const currentStage = computeBookingStage(b, TODAY_ISO);
+                    return (
+                      <tr key={b.id} className="hover:bg-safari-night/40 transition-colors">
+                        <td className="py-3.5 px-4 font-mono text-gold-300 font-semibold">
+                          {b.referenceCode}
+                        </td>
+                        <td className="py-3.5 px-4 font-serif text-sm text-white">
+                          {b.guest.fullName}
+                          <span className="block text-[10px] font-mono text-safari-sand/50">
+                            {b.guest.country} · {b.adultsCount} Adults
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-[11px]">
+                          {b.startDate} ({b.durationDays}D)
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${
+                              currentStage === "confirmed"
+                                ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+                                : currentStage === "in_safari"
+                                ? "bg-blue-950 text-blue-300 border border-blue-500/40 animate-pulse font-semibold"
+                                : currentStage === "completed"
+                                ? "bg-zinc-800 text-zinc-300 border border-zinc-600/40"
+                                : currentStage === "deposit_pending"
+                                ? "bg-amber-950 text-amber-300 border border-amber-500/40"
+                                : "bg-safari-night text-safari-sand/70 border border-safari-border"
+                            }`}
+                          >
+                            {currentStage.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-serif text-sm text-white">
+                          ${b.totalSellingPriceUsd.toLocaleString()}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono text-[11px]">
+                          {b.depositPaid ? (
+                            <span className="text-emerald-400">✓ Paid</span>
+                          ) : (
+                            <span className="text-amber-400">Due ${b.depositAmountUsd.toLocaleString()}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -191,42 +225,56 @@ export default function AdminOverviewPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-serif text-lg text-white">Upcoming Field Departures</h3>
-                <p className="text-xs text-safari-sand/60">Guide roster & cruiser assignments from Mombasa Base</p>
+                <p className="text-xs text-safari-sand/60">
+                  Only departures on or after {TODAY_ISO} (sorted ascending, limit 5)
+                </p>
               </div>
               <Link href="/admin/fleet" className="text-xs font-mono text-gold-400 hover:underline">
                 Fleet Status →
               </Link>
             </div>
 
-            <div className="space-y-3">
-              <div className="p-4 rounded bg-safari-night border border-safari-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div>
-                  <span className="text-[10px] font-mono text-gold-400 uppercase tracking-widest block">
-                    Departure: August 4, 2026 (07:00 EAT)
-                  </span>
-                  <h4 className="font-serif text-base text-white">Dr. Elena Rostova Family (Amboseli Crest)</h4>
-                  <p className="text-xs text-safari-sand/70">Pick up: Diani Beach Villa · Drop off: Mombasa</p>
-                </div>
-                <div className="flex items-center gap-3 text-[11px] font-mono text-safari-sand/80">
-                  <span className="p-1.5 rounded bg-safari-card border border-safari-border">Guide: Jackson Ole Lenku</span>
-                  <span className="p-1.5 rounded bg-safari-card border border-safari-border">Vehicle: KDG 893L</span>
-                </div>
+            {upcomingDepartures.length === 0 ? (
+              <div className="p-8 text-center text-xs font-mono text-safari-sand/50 bg-safari-night rounded border border-safari-border flex flex-col items-center justify-center gap-2">
+                <CalendarCheck className="w-6 h-6 text-safari-sand/30" />
+                <span>No upcoming field departures scheduled on or after {TODAY_ISO}.</span>
               </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingDepartures.map((departure) => {
+                  const assignedGuide = mockGuides.find((g) => g.id === departure.assignedGuideId);
+                  const assignedVehicle = mockVehicles.find((v) => v.id === departure.assignedVehicleId);
 
-              <div className="p-4 rounded bg-safari-night border border-safari-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div>
-                  <span className="text-[10px] font-mono text-gold-400 uppercase tracking-widest block">
-                    Departure: September 12, 2026 (06:30 EAT)
-                  </span>
-                  <h4 className="font-serif text-base text-white">Lord & Lady Harrington (Great Savanna Odyssey)</h4>
-                  <p className="text-xs text-safari-sand/70">Pick up: Moi International Airport · Direct Tsavo East Transfer</p>
-                </div>
-                <div className="flex items-center gap-3 text-[11px] font-mono text-safari-sand/80">
-                  <span className="p-1.5 rounded bg-safari-card border border-safari-border">Guide: David Ndung'u</span>
-                  <span className="p-1.5 rounded bg-safari-card border border-safari-border">Vehicle: KDE 412X</span>
-                </div>
+                  return (
+                    <div
+                      key={departure.id}
+                      className="p-4 rounded bg-safari-night border border-safari-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-gold-400/40 transition-colors"
+                    >
+                      <div>
+                        <span className="text-[10px] font-mono text-gold-400 uppercase tracking-widest block">
+                          Departure: {departure.startDate} ({departure.durationDays} Days)
+                        </span>
+                        <h4 className="font-serif text-base text-white">
+                          {departure.guest.fullName} ({departure.customTitle})
+                        </h4>
+                        <p className="text-xs text-safari-sand/70">
+                          Ref: {departure.referenceCode} · Status:{" "}
+                          <span className="capitalize">{departure.stage.replace("_", " ")}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] font-mono text-safari-sand/80 shrink-0">
+                        <span className="p-1.5 rounded bg-safari-card border border-safari-border">
+                          Guide: {assignedGuide ? assignedGuide.fullName : "Roster Pending"}
+                        </span>
+                        <span className="p-1.5 rounded bg-safari-card border border-safari-border">
+                          Vehicle: {assignedVehicle ? assignedVehicle.registrationPlate : "Unassigned"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -262,20 +310,20 @@ export default function AdminOverviewPage() {
                   href="/admin/suppliers"
                   className="text-xs font-mono text-gold-300 underline block pt-1"
                 >
-                  Review Contract attachment →
+                  Inspect Contract Document →
                 </Link>
               </div>
 
               <div className="p-3 bg-safari-night rounded border border-safari-border text-safari-sand/80 space-y-1">
-                <span className="font-mono text-[10px] uppercase text-amber-400 block font-semibold">
-                  Low Merchandise Stock
+                <span className="font-mono text-[10px] uppercase text-emerald-400 block font-semibold">
+                  Vehicle Maintenance Complete
                 </span>
-                <p>Field Canvas Photography Vests down to 12 units (threshold: 15).</p>
+                <p>Cruiser KDG 893L completed 10,000km scheduled service at Mombasa Depot.</p>
                 <Link
-                  href="/admin/merchandise"
+                  href="/admin/fleet"
                   className="text-xs font-mono text-gold-300 underline block pt-1"
                 >
-                  Reorder from Mombasa supplier →
+                  Update Vehicle Odometer →
                 </Link>
               </div>
             </div>

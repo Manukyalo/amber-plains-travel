@@ -135,7 +135,7 @@ export default function AdminCmsPage() {
                 Guest Mobile App Distribution & Store URLs
               </h3>
               <p className="text-xs text-safari-sand/60">
-                Configure Phase 1/2 "Coming Soon" status or activate live store buttons for Phase 3.
+                Configure Phase 1/2 &quot;Coming Soon&quot; status or activate live store buttons for Phase 3.
               </p>
             </div>
           </div>
