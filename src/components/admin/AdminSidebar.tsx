@@ -23,9 +23,18 @@ import {
   Layers,
 } from "lucide-react";
 
+import { UserRole } from "@/types/admin";
+import { mockBookings } from "@/data/adminMockData";
+import { isBookingActivePipeline, TODAY_ISO } from "@/utils/bookingDates";
+
 export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
   const [isStandaloneAdmin, setIsStandaloneAdmin] = useState(false);
+
+  // Dynamic active bookings count (not completed, not cancelled, end_date >= today)
+  const activeBookingsCount = mockBookings.filter((b) =>
+    isBookingActivePipeline(b, TODAY_ISO)
+  ).length;
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -50,7 +59,7 @@ export const AdminSidebar: React.FC = () => {
       group: "Command Center",
       links: [
         { label: "Overview", href: "/admin", altHref: "/", icon: <LayoutDashboard className="w-4 h-4" /> },
-        { label: "Bookings & CRM", href: "/admin/bookings", altHref: "/bookings", icon: <CalendarCheck className="w-4 h-4" />, badge: "4 Active" },
+        { label: "Bookings & CRM", href: "/admin/bookings", altHref: "/bookings", icon: <CalendarCheck className="w-4 h-4" />, badge: `${activeBookingsCount} Active` },
         { label: "Costing & Pricing", href: "/admin/costing", altHref: "/costing", icon: <Calculator className="w-4 h-4" /> },
         { label: "Payments & Ledger", href: "/admin/payments", altHref: "/payments", icon: <CreditCard className="w-4 h-4" /> },
       ],
@@ -110,9 +119,9 @@ export const AdminSidebar: React.FC = () => {
                   link.href === "/admin"
                     ? pathname === "/admin" || pathname === "/"
                     : pathname === link.href ||
-                      pathname.startsWith(link.href) ||
-                      pathname === link.altHref ||
-                      pathname.startsWith(`${link.altHref}/`);
+                    pathname.startsWith(link.href) ||
+                    pathname === link.altHref ||
+                    pathname.startsWith(`${link.altHref}/`);
 
                 // Link target adapts to standalone admin mode
                 const targetHref = isStandaloneAdmin ? link.altHref : link.href;
@@ -121,11 +130,10 @@ export const AdminSidebar: React.FC = () => {
                   <Link
                     key={link.href}
                     href={targetHref}
-                    className={`flex items-center justify-between px-3 py-2 rounded text-xs transition-colors ${
-                      isActive
+                    className={`flex items-center justify-between px-3 py-2 rounded text-xs transition-colors ${isActive
                         ? "bg-gold-400/15 text-gold-300 font-semibold border border-gold-400/40"
                         : "text-safari-sand/80 hover:bg-safari-card hover:text-white"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <span className={isActive ? "text-gold-400" : "text-safari-sand/60"}>
