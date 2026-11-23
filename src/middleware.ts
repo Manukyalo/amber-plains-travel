@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
 // Subroutes belonging to the Admin Control Centre
 const ADMIN_SUBROUTES = [
@@ -17,16 +18,12 @@ const ADMIN_SUBROUTES = [
   "packages",
 ];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const hostname = request.headers.get("host")?.toLowerCase() || "";
+  const pathname = url.pathname;
 
-  // Check if current hostname is designated for standalone Admin deployment
-  // Examples:
-  // - "admin.amberplains.co.ke"
-  // - "admin-amber-plains.vercel.app"
-  // - "amber-plains-admin.vercel.app"
-  // - or explicitly configured via ADMIN_HOST / NEXT_PUBLIC_STANDALONE_ADMIN
+  // Determine if host is standalone admin deployment (e.g., amber-plains-admin.vercel.app)
   const configuredAdminHost = process.env.ADMIN_HOST?.toLowerCase() || "";
   const isStandaloneAdminHost =
     process.env.NEXT_PUBLIC_STANDALONE_ADMIN === "true" ||
@@ -36,29 +33,72 @@ export function middleware(request: NextRequest) {
     hostname.includes("-admin.") ||
     hostname.includes("admin-amber-plains");
 
-  if (isStandaloneAdminHost) {
-    // 1. Root route "/" on standalone admin domain rewrites to "/admin"
-    if (url.pathname === "/") {
-      url.pathname = "/admin";
-      return NextResponse.rewrite(url);
-    }
+  // Standalone domain root route rewrite to /admin
+  let targetPath = pathname;
+  if (isStandaloneAdminHost && pathname === "/") {
+    targetPath = "/admin";
+    url.pathname = "/admin";
+  }
 
-    // 2. Direct paths like "/bookings", "/costing", "/payments" rewrite to "/admin/bookings", etc.
-    const firstSegment = url.pathname.split("/")[1];
-    if (ADMIN_SUBROUTES.includes(firstSegment)) {
-      url.pathname = `/admin${url.pathname}`;
-      return NextResponse.rewrite(url);
+  // Handle direct root-level admin subroutes (e.g. /suppliers -> /admin/suppliers)
+  const firstSegment = targetPath.split("/")[1];
+  const isDirectAdminSubroute = ADMIN_SUBROUTES.includes(firstSegment);
+  if (isDirectAdminSubroute) {
+    targetPath = `/admin${targetPath}`;
+    url.pathname = targetPath;
+  }
+
+  const isAdminRoute = targetPath === "/admin" || targetPath.startsWith("/admin/");
+  const isLoginRoute = pathname === "/login";
+
+  // Check Supabase session
+  const { supabaseResponse, user } = await updateSession(request);
+
+  // If visiting an admin route
+  if (isAdminRoute) {
+    // 1. Require authenticated user
+    if (!user) {
+      // In development/build if Supabase is intentionally unconfigured, allow pass-through only with mock warning
+      const isConfigured =
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
+
+      if (isConfigured) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    } else {
+      // 2. Require admin role in app_metadata
+      const userRole = user.app_metadata?.role;
+      if (userRole !== "admin") {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("error", "unauthorized_role");
+        return NextResponse.redirect(loginUrl);
+      }
     }
   }
 
-  // Allow request to continue normally
-  return NextResponse.next();
+  // If already logged in as admin and visiting /login, redirect to /admin
+  if (isLoginRoute && user && user.app_metadata?.role === "admin") {
+    const adminUrl = new URL(isStandaloneAdminHost ? "/" : "/admin", request.url);
+    return NextResponse.redirect(adminUrl);
+  }
+
+  // If rewriting was needed (e.g. /suppliers -> /admin/suppliers or standalone root -> /admin)
+  if (url.pathname !== pathname) {
+    return NextResponse.rewrite(url, {
+      headers: supabaseResponse.headers,
+    });
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except for:
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
