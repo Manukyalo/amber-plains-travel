@@ -6,7 +6,7 @@ export const siteSettingsData: SiteSettings = {
   foundedYear: 2014,
   headquarters: "Mombasa, Kenya",
   phone: process.env.NEXT_PUBLIC_COMPANY_PHONE || "+254 700 123 456",
-  whatsapp: process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || "+254 700 123 456",
+  whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || "+254 700 123 456",
   email: process.env.NEXT_PUBLIC_COMPANY_EMAIL || "safaris@amberplains.co.ke",
   emergencyPhone: "+254 711 987 654 (24/7 Operations Duty Officer)",
   address: {
