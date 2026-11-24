@@ -1,18 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X, Compass, Phone, MessageSquare, Smartphone } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, Menu as MenuIcon, X, ArrowRight, Smartphone, MessageSquare } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const pathname = usePathname();
+  const router = useRouter();
   const isHomepage = pathname === "/";
 
+  // Handle scroll detection
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 40);
@@ -23,25 +27,78 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close overlays on navigation
   useEffect(() => {
-    setMobileMenuOpen(false);
+    setMenuOpen(false);
+    setSearchOpen(false);
   }, [pathname]);
 
+  // Handle Escape key to close overlays
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setSearchOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Lock body scroll when any overlay is active
+  useEffect(() => {
+    if (menuOpen || searchOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen, searchOpen]);
+
+  // Focus search input when search opens
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchOpen]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/safaris?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery("");
+    }
+  };
+
   const navLinks = [
-    { label: "Safaris & Packages", href: "/safaris" },
-    { label: "Destinations", href: "/destinations" },
-    { label: "Experiences", href: "/experiences" },
-    { label: "Gallery", href: "/gallery" },
-    { label: "Travel Journal", href: "/journal" },
-    { label: "About", href: "/about" },
-    { label: "Guest App", href: "/app", badge: "New" },
+    { label: "Safaris & Packages", href: "/safaris", description: "Bespoke guided expeditions across East Africa" },
+    { label: "Destinations", href: "/destinations", description: "Tsavo, Amboseli, Maasai Mara & Swahili Coast" },
+    { label: "Experiences", href: "/experiences", description: "Bush to beach, private cruisers & balloon flights" },
+    { label: "Gallery", href: "/gallery", description: "Visual archives from the untamed wild" },
+    { label: "Travel Journal", href: "/journal", description: "Field notes, migration timings & naturalist essays" },
+    { label: "About", href: "/about", description: "Our Mombasa heritage, fellowship & guiding ethos" },
+    { label: "Guest App", href: "/app", badge: "New", description: "Offline manifests, guide tracking & digital briefing" },
+  ];
+
+  const popularSearches = [
+    { label: "Tsavo National Parks", href: "/destinations/tsavo-national-parks" },
+    { label: "Amboseli & Kilimanjaro", href: "/destinations/amboseli-and-kilimanjaro" },
+    { label: "Maasai Mara Conservancies", href: "/destinations/maasai-mara-conservancies" },
+    { label: "Coastal & Great Savanna Odyssey", href: "/safaris/coastal-and-great-savanna-odyssey" },
+    { label: "Bush to Beach Odyssey", href: "/experiences/bush-to-beach-odyssey" },
   ];
 
   const headerBgClass = isScrolled
-    ? "bg-safari-night/95 backdrop-blur-md border-b border-safari-border shadow-luxury py-4"
+    ? "bg-[#1C1614]/90 backdrop-blur-md border-b border-white/5 py-4 shadow-sm"
     : isHomepage
-    ? "bg-gradient-to-b from-black/80 via-black/40 to-transparent py-6"
-    : "bg-safari-night py-5 border-b border-safari-border";
+    ? "bg-transparent border-none py-6 sm:py-7"
+    : "bg-[#1C1614]/95 backdrop-blur-md border-b border-white/5 py-4 sm:py-5";
 
   return (
     <>
@@ -49,145 +106,220 @@ export const Navbar: React.FC = () => {
         className={`fixed top-0 inset-x-0 z-40 transition-all duration-300 ${headerBgClass}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          {/* Brand Identity */}
+          {/* Left: Logo Only - Light, Elegant Wordmark in White */}
           <Link
             href="/"
-            className="group flex flex-col items-start focus:outline-none focus:ring-1 focus:ring-gold-400"
+            className="group focus:outline-none focus-visible:ring-1 focus-visible:ring-terracotta py-1"
+            aria-label="Amber Plains Homepage"
           >
-            <span className="font-serif text-2xl sm:text-3xl text-white font-normal tracking-wide group-hover:text-gold-300 transition-colors">
+            <span className="font-serif text-2xl sm:text-3xl text-white font-light tracking-normal hover:opacity-90 transition-opacity drop-shadow-sm">
               Amber Plains
-            </span>
-            <span className="text-[10px] uppercase tracking-widest text-gold-400/90 font-mono -mt-1">
-              Travel · Mombasa
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-7">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`text-xs uppercase tracking-widest transition-colors font-medium relative py-1 ${
-                    isActive
-                      ? "text-gold-400 font-semibold"
-                      : "text-safari-sand/80 hover:text-white"
-                  }`}
-                >
-                  {link.label}
-                  {link.badge && (
-                    <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-mono tracking-normal bg-gold-400/20 text-gold-300 rounded border border-gold-400/40">
-                      {link.badge}
-                    </span>
-                  )}
-                  {isActive && (
-                    <span className="absolute bottom-0 inset-x-0 h-0.5 bg-gold-400" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Action Area */}
-          <div className="hidden sm:flex items-center space-x-4">
+          {/* Right Side Only: Plan your trip -> Search -> Menu */}
+          <div className="flex items-center space-x-3 sm:space-x-6">
+            {/* 1. Flat Terracotta Button "Plan your trip" */}
             <Link
-              href="https://wa.me/254700123456"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Direct WhatsApp Safari Concierge"
-              className="text-safari-sand/70 hover:text-gold-400 transition-colors p-2"
-              title="Chat with Safari Concierge on WhatsApp"
+              href="/contact"
+              className="inline-flex items-center justify-center bg-terracotta hover:bg-terracotta-hover text-white text-xs sm:text-sm font-sans font-medium px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-[3px] transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
             >
-              <MessageSquare className="w-4 h-4" />
+              Plan your trip
             </Link>
 
-            <Button
-              href="/contact"
-              variant="primary"
-              size="sm"
-              className="shadow-sm"
-            >
-              Plan Your Trip
-            </Button>
-          </div>
-
-          {/* Mobile Menu Hamburger */}
-          <div className="flex sm:hidden items-center space-x-2">
-            <Button href="/contact" variant="primary" size="sm" className="py-2 px-3 text-[10px]">
-              Plan
-            </Button>
+            {/* 2. Search Icon with the Word "Search" */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-              className="text-white p-2 focus:outline-none focus:ring-2 focus:ring-gold-400"
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-1.5 sm:gap-2 text-white/90 hover:text-white text-xs sm:text-sm font-sans font-normal transition-colors py-1.5 px-1 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+              aria-label="Open search dialog"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <Search className="w-4 h-4 text-white/90" />
+              <span className="hidden xs:inline sm:inline">Search</span>
+            </button>
+
+            {/* 3. "Menu" with Hamburger Icon */}
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="flex items-center gap-1.5 sm:gap-2 text-white/90 hover:text-white text-xs sm:text-sm font-sans font-normal transition-colors py-1.5 px-1 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+              aria-label="Open navigation menu"
+            >
+              <span>Menu</span>
+              <MenuIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white/90" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex flex-col bg-safari-night text-white animate-fadeIn">
-          <div className="flex items-center justify-between p-6 border-b border-safari-border">
-            <div className="flex flex-col">
-              <span className="font-serif text-2xl text-white">Amber Plains</span>
-              <span className="text-[10px] uppercase tracking-widest text-gold-400 font-mono">
-                Mombasa, Kenya
-              </span>
-            </div>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label="Close navigation"
-              className="p-2 text-safari-sand hover:text-white"
+      {/* FULL-SCREEN MENU OVERLAY */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-[#1A1412]/98 backdrop-blur-2xl flex flex-col justify-between p-6 sm:p-12 text-white animate-fadeIn overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site Navigation"
+        >
+          {/* Top Bar inside Menu */}
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between pb-8 border-b border-white/10">
+            <Link
+              href="/"
+              onClick={() => setMenuOpen(false)}
+              className="font-serif text-2xl sm:text-3xl text-white font-light tracking-normal"
             >
-              <X className="w-7 h-7" />
+              Amber Plains
+            </Link>
+
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 text-white/80 hover:text-white text-xs sm:text-sm font-sans transition-colors p-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+              aria-label="Close menu"
+            >
+              <span>Close</span>
+              <X className="w-5 h-5 text-white/90" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
-            <nav className="space-y-4">
+          {/* Central Links Grid */}
+          <div className="max-w-7xl mx-auto w-full my-auto py-10 sm:py-16 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+            {/* Primary Large Serif Navigation Links */}
+            <nav className="lg:col-span-8 space-y-4 sm:space-y-6" aria-label="Main menu">
               {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="flex items-center justify-between py-2 text-lg font-serif tracking-wide border-b border-safari-border/40 text-safari-sand hover:text-gold-400 transition-colors"
-                >
-                  <span>{link.label}</span>
-                  {link.badge && (
-                    <span className="text-xs font-mono uppercase bg-gold-400/20 text-gold-300 px-2 py-0.5 rounded border border-gold-400/40">
-                      {link.badge}
-                    </span>
-                  )}
-                </Link>
+                <div key={link.href} className="group">
+                  <Link
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="inline-flex items-center font-serif text-3xl sm:text-4xl md:text-5xl font-light text-white hover:text-terracotta transition-colors py-1"
+                  >
+                    <span>{link.label}</span>
+                    {link.badge && (
+                      <span className="ml-3 px-2 py-0.5 text-[10px] font-mono tracking-wider uppercase bg-terracotta/20 text-[#E5B5A2] border border-terracotta/30 rounded">
+                        {link.badge}
+                      </span>
+                    )}
+                  </Link>
+                  <p className="hidden sm:block text-xs text-white/40 font-light mt-0.5 pl-0.5">
+                    {link.description}
+                  </p>
+                </div>
               ))}
             </nav>
 
-            <div className="pt-6 space-y-4 border-t border-safari-border">
-              <Button href="/contact" variant="primary" size="lg" className="w-full">
-                Plan Your Tailor-Made Safari
-              </Button>
-
-              <Link
-                href="/app"
-                className="flex items-center justify-center gap-2 w-full py-3 text-xs uppercase tracking-wider text-safari-sand border border-safari-border hover:border-gold-400 transition-colors"
-              >
-                <Smartphone className="w-4 h-4 text-gold-400" />
-                Get the Guest Companion App
-              </Link>
-            </div>
-
-            <div className="pt-4 text-xs text-safari-sand/60 space-y-2">
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-gold-400" />
-                <span>+254 700 123 456 (Mombasa Ops)</span>
+            {/* Quiet Context & Direct Actions Panel */}
+            <div className="lg:col-span-4 space-y-8 pt-4 lg:pt-2 border-t lg:border-t-0 lg:border-l border-white/10 lg:pl-10">
+              <div className="space-y-3">
+                <span className="text-[11px] font-sans tracking-widest uppercase text-white/40">
+                  Begin Your Expedition
+                </span>
+                <p className="text-xs sm:text-sm text-white/70 font-light leading-relaxed">
+                  Tailor-made itineraries bridging Kenya’s Swahili coastline with Tsavo, Amboseli, and the Maasai Mara.
+                </p>
+                <div className="pt-2">
+                  <Link
+                    href="/contact"
+                    onClick={() => setMenuOpen(false)}
+                    className="inline-flex items-center justify-center w-full bg-terracotta hover:bg-terracotta-hover text-white text-sm font-sans font-medium px-5 py-3 rounded-[3px] transition-colors"
+                  >
+                    Plan your trip
+                  </Link>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Compass className="w-3.5 h-3.5 text-gold-400" />
-                <span>Bamburi Beach Ridge · Mombasa, Kenya</span>
+
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                <span className="text-[11px] font-sans tracking-widest uppercase text-white/40">
+                  Safari Concierge
+                </span>
+                <div className="space-y-1.5 text-xs text-white/70 font-light">
+                  <p>Mombasa Headquarters: Bamburi Beach Ridge</p>
+                  <p>Direct: +254 700 123 456</p>
+                  <p className="text-white/40">Hours: 07:00 – 21:00 EAT</p>
+                </div>
+                <div className="pt-1 flex items-center gap-3">
+                  <Link
+                    href="https://wa.me/254700123456"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-terracotta hover:text-white transition-colors"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>WhatsApp Concierge</span>
+                  </Link>
+                  <span className="text-white/20">·</span>
+                  <Link
+                    href="/app"
+                    onClick={() => setMenuOpen(false)}
+                    className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Guest App</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar inside Menu */}
+          <div className="max-w-7xl mx-auto w-full pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-white/40 gap-2">
+            <span>© {new Date().getFullYear()} Amber Plains Travel Ltd · Mombasa, Kenya</span>
+            <span>KATO Bonded · EcoTourism Kenya Certified</span>
+          </div>
+        </div>
+      )}
+
+      {/* SEARCH OVERLAY */}
+      {searchOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-[#1A1412]/98 backdrop-blur-2xl flex flex-col items-center justify-start pt-20 sm:pt-28 px-4 sm:px-8 text-white animate-fadeIn"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search Amber Plains"
+        >
+          {/* Close Search Button */}
+          <div className="w-full max-w-3xl flex justify-end mb-6">
+            <button
+              onClick={() => setSearchOpen(false)}
+              className="flex items-center gap-2 text-white/70 hover:text-white text-xs sm:text-sm font-sans transition-colors p-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+              aria-label="Close search"
+            >
+              <span>Close</span>
+              <X className="w-5 h-5 text-white/90" />
+            </button>
+          </div>
+
+          {/* Search Input Box */}
+          <div className="w-full max-w-3xl space-y-8">
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search safaris, destinations, wildlife..."
+                className="w-full bg-transparent border-b border-white/20 pb-4 pr-12 font-serif text-2xl sm:text-4xl text-white placeholder:text-white/30 focus:outline-none focus:border-terracotta transition-colors"
+              />
+              <button
+                type="submit"
+                className="absolute right-0 bottom-4 text-white/70 hover:text-terracotta transition-colors p-1"
+                aria-label="Submit search"
+              >
+                <ArrowRight className="w-6 h-6" />
+              </button>
+            </form>
+
+            {/* Curated Suggested Searches */}
+            <div className="space-y-4">
+              <span className="text-[11px] font-sans tracking-widest uppercase text-white/40">
+                Popular Expeditions
+              </span>
+              <div className="flex flex-wrap gap-2.5">
+                {popularSearches.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSearchOpen(false)}
+                    className="inline-flex items-center text-xs sm:text-sm font-sans text-white/80 hover:text-white bg-white/5 hover:bg-white/10 px-3.5 py-1.5 rounded-[3px] border border-white/10 transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

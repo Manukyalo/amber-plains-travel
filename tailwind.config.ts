@@ -9,6 +9,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        terracotta: {
+          DEFAULT: "#C98F78",
+          hover: "#B87F69",
+          light: "#D8A38F",
+        },
+        sand: {
+          DEFAULT: "#F4EBDD",
+          light: "#FAF5EE",
+          dark: "#E2D3BE",
+        },
+        ink: {
+          DEFAULT: "#2B211B",
+          warm: "#1C1614",
+          deep: "#140F0D",
+        },
         gold: {
           50: "#FAF6ED",
           100: "#F3EAD5",

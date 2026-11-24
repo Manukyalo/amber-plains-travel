@@ -6,6 +6,13 @@
 
 @layer base {
   :root {
+    --terracotta: #C98F78;
+    --terracotta-hover: #B87F69;
+    --sand: #F4EBDD;
+    --sand-light: #FAF5EE;
+    --sand-dark: #E2D3BE;
+    --ink: #2B211B;
+    --ink-warm: #1C1614;
     --font-cormorant: "Cormorant Garamond", Georgia, serif;
     --font-jakarta: "Plus Jakarta Sans", system-ui, sans-serif;
     --background: #0B0E0C;
@@ -31,7 +38,7 @@
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #C5A059;
+    background: #C98F78;
   }
 }
 
@@ -46,6 +53,58 @@
   }
 }
 
+@keyframes kenBurns {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes headlineFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slowGrowShrink {
+  0%, 100% {
+    transform: scaleY(0.35);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.95;
+  }
+}
+
 .animate-fadeIn {
-  animation: fadeIn 0.4s ease-out forwards;
+  animation: fadeIn 0.35s ease-out forwards;
+}
+
+.animate-ken-burns {
+  animation: kenBurns 20s ease-out forwards;
+}
+
+.animate-headline-fade {
+  animation: headlineFadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scroll-line {
+  animation: slowGrowShrink 3.2s ease-in-out infinite;
+  transform-origin: top;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ken-burns,
+  .animate-headline-fade,
+  .animate-scroll-line {
+    animation: none !important;
+  }
 }
