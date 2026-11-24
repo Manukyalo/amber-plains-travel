@@ -152,34 +152,20 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Col 4: Guest Mobile App & Trust */}
+          {/* Col 4: Trust & Certifications */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono uppercase tracking-widest text-gold-400 font-semibold">
-              Guest Technology
+              Accreditation
             </h4>
-            <div className="p-4 bg-safari-card rounded border border-safari-border space-y-2">
-              <div className="flex items-center gap-2 text-white font-medium text-xs">
-                <Smartphone className="w-4 h-4 text-gold-400" />
-                <span>Guest Companion App</span>
-              </div>
-              <p className="text-[11px] text-safari-sand/70 font-light leading-snug">
-                Access your offline day-by-day itinerary, live bush navigation, animal field guide,
-                and direct guide chat.
-              </p>
-              <Link
-                href="/app"
-                className="inline-flex items-center gap-1.5 text-xs text-gold-400 hover:text-gold-300 pt-1 font-medium"
-              >
-                Scan QR or Download <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-
-            <div className="pt-2 text-[11px] text-safari-sand/60 space-y-1 font-light">
+            <div className="pt-2 text-[11px] text-safari-sand/60 space-y-2 font-light">
               <p className="flex items-center gap-1.5 text-safari-sand/80">
                 <ShieldCheck className="w-3.5 h-3.5 text-gold-400" /> KATO Bonded Member
               </p>
               <p className="flex items-center gap-1.5 text-safari-sand/80">
                 <Compass className="w-3.5 h-3.5 text-gold-400" /> EcoTourism Kenya Certified
+              </p>
+              <p className="text-[11px] text-safari-sand/60 leading-relaxed pt-1">
+                Licensed tour operator under the Tourism Regulatory Authority of Kenya (TRA).
               </p>
             </div>
           </div>
