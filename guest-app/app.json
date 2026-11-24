@@ -53,6 +53,12 @@
         "projectId": "548bf4c9-dd88-43b2-871b-da966f3a0eec"
       }
     },
-    "owner": "manukyalo"
+    "owner": "manukyalo",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/548bf4c9-dd88-43b2-871b-da966f3a0eec"
+    }
   }
 }

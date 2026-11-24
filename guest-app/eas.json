@@ -16,7 +16,8 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://fvlusambjkzcnrfvnome.supabase.co"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -25,7 +26,8 @@
       },
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "preview"
     }
   },
   "submit": {}
