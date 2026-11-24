@@ -57,9 +57,14 @@ export default function LoginScreen() {
     <View style={styles.container}>
       {/* Brand Header */}
       <View style={styles.brandBox}>
+        <Image
+          source={require('../../assets/images/guest-app-logo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
         <View style={styles.badgeRow}>
           <Ionicons name="compass" size={16} color={AmberPlainsColors.gold} />
-          <Text style={styles.badgeText}>AMBER PLAINS TRAVEL</Text>
+          <Text style={styles.badgeText}>AMBER PLAINS SAFARIS</Text>
         </View>
         <Text style={styles.brandTitle}>Guest Portal Sign In</Text>
         <Text style={styles.brandSub}>
@@ -163,6 +168,11 @@ const styles = StyleSheet.create({
   brandBox: {
     marginBottom: 24,
     alignItems: 'center',
+  },
+  logoImage: {
+    width: 84,
+    height: 88,
+    marginBottom: 12,
   },
   badgeRow: {
     flexDirection: 'row',

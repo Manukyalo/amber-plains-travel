@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,6 +54,11 @@ export default function RegisterScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentWrap}>
       <View style={styles.header}>
+        <Image
+          source={require('../../assets/images/guest-app-logo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
         <Text style={styles.headerSubtitle}>GUEST MEMBERSHIP</Text>
         <Text style={styles.headerTitle}>Create Guest Account</Text>
         <Text style={styles.headerDesc}>
@@ -155,6 +161,12 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+    alignItems: 'center',
+  },
+  logoImage: {
+    width: 76,
+    height: 80,
+    marginBottom: 10,
   },
   headerSubtitle: {
     color: AmberPlainsColors.gold,

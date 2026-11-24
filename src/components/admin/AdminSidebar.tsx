@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -95,12 +96,16 @@ export const AdminSidebar: React.FC = () => {
     <aside className="w-64 bg-safari-night border-r border-safari-border flex flex-col justify-between shrink-0 min-h-screen text-safari-sand">
       <div>
         {/* Brand Header */}
-        <div className="p-6 border-b border-safari-border flex items-center justify-between">
+        <div className="p-5 border-b border-safari-border flex items-center justify-between">
           <Link href={isStandaloneAdmin ? "/" : "/admin"} className="flex flex-col">
-            <span className="font-serif text-xl text-white font-normal tracking-wide">
-              Amber Plains
-            </span>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400">
+            <Image
+              src="/images/amber-plains-website-logo-transparent.png"
+              alt="Amber Plains Safaris"
+              width={140}
+              height={80}
+              className="h-8 w-auto object-contain mb-1"
+            />
+            <span className="text-[9px] font-mono uppercase tracking-widest text-gold-400">
               Operations Control
             </span>
           </Link>

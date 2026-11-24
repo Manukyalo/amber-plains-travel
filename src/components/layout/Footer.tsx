@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   MapPin,
   Phone,
@@ -23,13 +24,14 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-safari-border/70">
           {/* Col 1: Brand & Heritage */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block">
-              <span className="font-serif text-3xl text-white font-normal tracking-wide">
-                Amber Plains
-              </span>
-              <span className="block text-[10px] uppercase tracking-widest text-gold-400 font-mono -mt-1">
-                Travel · Mombasa & East Africa
-              </span>
+            <Link href="/" className="inline-block focus:outline-none">
+              <Image
+                src="/images/amber-plains-website-logo-transparent.png"
+                alt="Amber Plains Safaris"
+                width={200}
+                height={114}
+                className="h-12 sm:h-14 w-auto object-contain mb-1"
+              />
             </Link>
             <p className="text-sm font-light text-safari-sand/75 leading-relaxed max-w-sm">
               Headquartered on the historic Kenyan coast at Mombasa. We curate bespoke private

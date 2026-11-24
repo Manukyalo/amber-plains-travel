@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, Menu as MenuIcon, X, ArrowRight, Smartphone, MessageSquare } from "lucide-react";
 
@@ -97,8 +98,8 @@ export const Navbar: React.FC = () => {
   const headerBgClass = isScrolled
     ? "bg-[#1C1614]/90 backdrop-blur-md border-b border-white/5 py-4 shadow-sm"
     : isHomepage
-    ? "bg-transparent border-none py-6 sm:py-7"
-    : "bg-[#1C1614]/95 backdrop-blur-md border-b border-white/5 py-4 sm:py-5";
+      ? "bg-transparent border-none py-6 sm:py-7"
+      : "bg-[#1C1614]/95 backdrop-blur-md border-b border-white/5 py-4 sm:py-5";
 
   return (
     <>
@@ -106,15 +107,20 @@ export const Navbar: React.FC = () => {
         className={`fixed top-0 inset-x-0 z-40 transition-all duration-300 ${headerBgClass}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          {/* Left: Logo Only - Light, Elegant Wordmark in White */}
+          {/* Left: Official Company Website Logo */}
           <Link
             href="/"
-            className="group focus:outline-none focus-visible:ring-1 focus-visible:ring-terracotta py-1"
-            aria-label="Amber Plains Homepage"
+            className="group flex items-center focus:outline-none focus-visible:ring-1 focus-visible:ring-terracotta py-1"
+            aria-label="Amber Plains Safaris Homepage"
           >
-            <span className="font-serif text-2xl sm:text-3xl text-white font-light tracking-normal hover:opacity-90 transition-opacity drop-shadow-sm">
-              Amber Plains
-            </span>
+            <Image
+              src="/images/amber-plains-website-logo-transparent.png"
+              alt="Amber Plains Safaris"
+              width={160}
+              height={90}
+              priority
+              className="h-9 sm:h-11 w-auto object-contain hover:opacity-95 transition-opacity drop-shadow-sm"
+            />
           </Link>
 
           {/* Right Side Only: Plan your trip -> Search -> Menu */}
@@ -163,9 +169,15 @@ export const Navbar: React.FC = () => {
             <Link
               href="/"
               onClick={() => setMenuOpen(false)}
-              className="font-serif text-2xl sm:text-3xl text-white font-light tracking-normal"
+              className="flex items-center focus:outline-none"
             >
-              Amber Plains
+              <Image
+                src="/images/amber-plains-website-logo-transparent.png"
+                alt="Amber Plains Safaris"
+                width={150}
+                height={85}
+                className="h-8 sm:h-10 w-auto object-contain"
+              />
             </Link>
 
             <button

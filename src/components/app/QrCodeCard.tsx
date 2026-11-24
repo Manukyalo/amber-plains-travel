@@ -84,7 +84,18 @@ export const QrCodeCard: React.FC<QrCodeCardProps> = ({
     <div
       className={`bg-safari-card border border-safari-border rounded-lg p-6 sm:p-8 flex flex-col items-center text-center max-w-sm mx-auto shadow-luxury ${className}`}
     >
-      <div className="flex items-center gap-2 text-gold-400 text-xs font-mono uppercase tracking-widest mb-3">
+      {/* Authentic Guest App Icon Emblem */}
+      <div className="mb-3 flex items-center justify-center">
+        <Image
+          src="/images/guest-app-logo.png"
+          alt="Amber Plains Guest App"
+          width={64}
+          height={68}
+          className="w-16 h-auto object-contain rounded-xl shadow-md border border-gold-400/30"
+        />
+      </div>
+
+      <div className="flex items-center gap-2 text-gold-400 text-xs font-mono uppercase tracking-widest mb-2">
         <QrIcon className="w-4 h-4" />
         <span>Scan or Download QR</span>
       </div>
