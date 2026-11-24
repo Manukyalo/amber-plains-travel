@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AmberPlainsColors } from '../../constants/Colors';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, Image } from 'react-native';
 import { useCart } from '../../src/context/CartContext';
 
 export default function TabLayout() {
@@ -38,7 +38,18 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Explore',
-          headerTitle: 'AMBER PLAINS EXPEDITIONS',
+          headerTitle: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+              <Image
+                source={require('../../assets/images/guest-app-logo.png')}
+                style={{ width: 26, height: 28 }}
+                resizeMode="contain"
+              />
+              <Text style={{ color: AmberPlainsColors.sand, fontWeight: '700', fontSize: 16, letterSpacing: 0.5 }}>
+                AMBER PLAINS
+              </Text>
+            </View>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="compass-outline" size={size || 22} color={color as string} />
           ),

@@ -49,6 +49,11 @@ export default function ExploreScreen() {
         />
         <View style={styles.heroOverlay} />
         <View style={styles.heroContent}>
+          <Image
+            source={require('../../assets/images/guest-app-logo.png')}
+            style={{ width: 68, height: 72, marginBottom: 12, alignSelf: 'center' }}
+            resizeMode="contain"
+          />
           <Text style={styles.heroBadge}>KATO BONDED #492 • TRA LICENSED</Text>
           <Text style={styles.heroTitle}>Bespoke Private Expeditions</Text>
           <Text style={styles.heroSubtitle}>

@@ -9,12 +9,12 @@ export const HeroSection: React.FC = () => {
       {/* Full-bleed Edge-to-Edge Golden-Hour Safari Photography */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=2560&q=85"
-          alt="Golden hour safari across the Kenyan savanna plains with acacia trees and bespoke land cruiser"
+          src="/images/bechti8810.jpg"
+          alt="Wild leopard resting in the East African savanna trees - Amber Plains Safaris"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[center_38%] sm:object-center transition-transform duration-[20000ms] animate-ken-burns will-change-transform"
+          className="object-cover object-[center_35%] sm:object-center transition-transform duration-[20000ms] animate-ken-burns will-change-transform"
         />
 
         {/* Faint, delicate top gradient to keep navigation crisp */}

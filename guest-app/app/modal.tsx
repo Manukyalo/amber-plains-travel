@@ -1,11 +1,16 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AmberPlainsColors } from '../constants/Colors';
 
 export default function ModalScreen() {
   return (
     <View style={styles.container}>
+      <Image
+        source={require('../assets/images/guest-app-logo.png')}
+        style={{ width: 64, height: 68, alignSelf: 'center', marginBottom: 16 }}
+        resizeMode="contain"
+      />
       <View style={styles.badgeRow}>
         <Ionicons name="compass" size={18} color={AmberPlainsColors.gold} />
         <Text style={styles.badgeText}>OPERATIONS CONCIERGE</Text>

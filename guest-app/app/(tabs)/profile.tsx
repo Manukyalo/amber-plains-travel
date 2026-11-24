@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,6 +54,11 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Profile Card Header */}
       <View style={styles.profileHeader}>
+        <Image
+          source={require('../../assets/images/guest-app-logo.png')}
+          style={{ width: 60, height: 64, marginBottom: 14 }}
+          resizeMode="contain"
+        />
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarInitials}>
             {(guest?.full_name || 'AP')
