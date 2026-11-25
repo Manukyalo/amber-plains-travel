@@ -1,179 +1,286 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  CalendarCheck,
+  CalendarDays,
   Calculator,
   CreditCard,
-  Building2,
+  FileText,
+  Route,
   Truck,
   Users,
   ShoppingBag,
   Globe,
-  PhoneCall,
+  Bot,
   Search,
-  LineChart,
+  BarChart3,
   Settings,
-  Compass,
-  ArrowUpRight,
-  Shield,
-  Layers,
+  ExternalLink,
+  X,
 } from "lucide-react";
-
-import { UserRole } from "@/types/admin";
 import { mockBookings } from "@/data/adminMockData";
-import { isBookingActivePipeline, TODAY_ISO } from "@/utils/bookingDates";
+import { TODAY_ISO, isBookingActivePipeline } from "@/utils/bookingDates";
 
-export const AdminSidebar: React.FC = () => {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  badge?: string | number;
+  badgeVariant?: "gold" | "emerald" | "rose";
+}
+
+interface NavGroup {
+  group: string;
+  items: NavItem[];
+}
+
+interface AdminSidebarProps {
+  collapsed?: boolean;
+  onCloseMobile?: () => void;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function useIsStandaloneAdmin(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.hostname.startsWith("admin.");
+}
+
+function BadgePill({
+  badge,
+  variant = "gold",
+}: {
+  badge: string | number;
+  variant?: "gold" | "emerald" | "rose";
+}) {
+  const styles: Record<string, string> = {
+    gold: "bg-gold-400/15 text-gold-400 border-gold-400/30",
+    emerald: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    rose: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold uppercase tracking-wider border ${styles[variant]}`}
+    >
+      {badge}
+    </span>
+  );
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export function AdminSidebar({ collapsed = false, onCloseMobile }: AdminSidebarProps) {
   const pathname = usePathname();
-  const [isStandaloneAdmin, setIsStandaloneAdmin] = useState(false);
+  const isStandalone = useIsStandaloneAdmin();
 
-  // Dynamic active bookings count (not completed, not cancelled, end_date >= today)
   const activeBookingsCount = mockBookings.filter((b) =>
     isBookingActivePipeline(b, TODAY_ISO)
   ).length;
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const host = window.location.hostname.toLowerCase();
-      const isStandalone =
-        host.startsWith("admin.") ||
-        host.startsWith("admin-") ||
-        host.includes("-admin.") ||
-        host.includes("admin-amber-plains") ||
-        process.env.NEXT_PUBLIC_STANDALONE_ADMIN === "true";
-      setIsStandaloneAdmin(isStandalone);
-    }
-  }, []);
-
-  const publicWebsiteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://amberplains.co.ke";
-
-  // Base prefix for links: on standalone domain, links can be "/costing" or "/admin/costing"
-  // Using "/admin" or relative links is completely supported because of our middleware
-  const navGroups = [
+  const navGroups: NavGroup[] = [
     {
-      group: "Command Center",
-      links: [
-        { label: "Overview", href: "/admin", altHref: "/", icon: <LayoutDashboard className="w-4 h-4" /> },
-        { label: "Bookings & CRM", href: "/admin/bookings", altHref: "/bookings", icon: <CalendarCheck className="w-4 h-4" />, badge: `${activeBookingsCount} Active` },
-        { label: "Costing & Pricing", href: "/admin/costing", altHref: "/costing", icon: <Calculator className="w-4 h-4" /> },
-        { label: "Payments & Ledger", href: "/admin/payments", altHref: "/payments", icon: <CreditCard className="w-4 h-4" /> },
+      group: "Command Centre",
+      items: [
+        { label: "Command Centre", href: "/admin", icon: LayoutDashboard },
+        {
+          label: "Bookings & Guests",
+          href: "/admin/bookings",
+          icon: CalendarDays,
+          badge: activeBookingsCount,
+          badgeVariant: "gold",
+        },
+        { label: "Costing & Pricing", href: "/admin/costing", icon: Calculator },
+        { label: "Payments & Ledger", href: "/admin/payments", icon: CreditCard },
       ],
     },
     {
       group: "Operations & Logistics",
-      links: [
-        { label: "Supplier Contracts", href: "/admin/suppliers", altHref: "/suppliers", icon: <Building2 className="w-4 h-4" /> },
-        { label: "Packages & Routes", href: "/admin/packages", altHref: "/packages", icon: <Layers className="w-4 h-4" /> },
-        { label: "4x4 Safari Fleet", href: "/admin/fleet", altHref: "/fleet", icon: <Truck className="w-4 h-4" /> },
-        { label: "Guides & Drivers", href: "/admin/guides", altHref: "/guides", icon: <Users className="w-4 h-4" /> },
-        { label: "Merchandise", href: "/admin/merchandise", altHref: "/merchandise", icon: <ShoppingBag className="w-4 h-4" /> },
+      items: [
+        { label: "Supplier Contracts", href: "/admin/suppliers", icon: FileText },
+        { label: "Packages & Routes", href: "/admin/packages", icon: Route },
+        { label: "4x4 Safari Fleet", href: "/admin/fleet", icon: Truck },
+        { label: "Guides & Drivers", href: "/admin/guides", icon: Users },
+        { label: "Merchandise", href: "/admin/merchandise", icon: ShoppingBag },
       ],
     },
     {
       group: "Intelligence & Growth",
-      links: [
-        { label: "Website CMS & App", href: "/admin/cms", altHref: "/cms", icon: <Globe className="w-4 h-4" /> },
-        { label: "AI Receptionist", href: "/admin/receptionist", altHref: "/receptionist", icon: <PhoneCall className="w-4 h-4" />, badge: "Live" },
-        { label: "Website Hunter", href: "/admin/hunter", altHref: "/hunter", icon: <Search className="w-4 h-4" /> },
-        { label: "SEO Engine", href: "/admin/seo", altHref: "/seo", icon: <LineChart className="w-4 h-4" /> },
+      items: [
+        { label: "Website CMS & App", href: "/admin/cms", icon: Globe },
+        {
+          label: "AI Receptionist",
+          href: "/admin/receptionist",
+          icon: Bot,
+          badge: "Live",
+          badgeVariant: "emerald",
+        },
+        { label: "Website Hunter", href: "/admin/hunter", icon: Search },
+        { label: "SEO Engine", href: "/admin/seo", icon: BarChart3 },
       ],
     },
     {
       group: "Governance",
-      links: [
-        { label: "Reports & Settings", href: "/admin/settings", altHref: "/settings", icon: <Settings className="w-4 h-4" /> },
+      items: [
+        { label: "Reports & Settings", href: "/admin/settings", icon: Settings },
       ],
     },
   ];
 
+  function isActive(href: string) {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
+  }
+
+  const publicHref = isStandalone ? "https://amberplainstravel.com" : "/";
+
   return (
-    <aside className="w-64 bg-safari-night border-r border-safari-border flex flex-col justify-between shrink-0 min-h-screen text-safari-sand">
-      <div>
-        {/* Brand Header */}
-        <div className="p-5 border-b border-safari-border flex items-center justify-between">
-          <Link href={isStandaloneAdmin ? "/" : "/admin"} className="flex flex-col">
-            <Image
-              src="/images/amber-plains-website-logo-transparent.png"
-              alt="Amber Plains Safaris"
-              width={140}
-              height={80}
-              className="h-8 w-auto object-contain mb-1"
-            />
-            <span className="text-[9px] font-mono uppercase tracking-widest text-gold-400">
-              Operations Control
-            </span>
-          </Link>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="System Online" />
-        </div>
-
-        {/* Navigation Sections */}
-        <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
-          {navGroups.map((group, idx) => (
-            <div key={idx} className="space-y-1">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-safari-sand/50 px-3 block mb-1">
-                {group.group}
-              </span>
-              {group.links.map((link) => {
-                const isActive =
-                  link.href === "/admin"
-                    ? pathname === "/admin" || pathname === "/"
-                    : pathname === link.href ||
-                    pathname.startsWith(link.href) ||
-                    pathname === link.altHref ||
-                    pathname.startsWith(`${link.altHref}/`);
-
-                // Link target adapts to standalone admin mode
-                const targetHref = isStandaloneAdmin ? link.altHref : link.href;
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={targetHref}
-                    className={`flex items-center justify-between px-3 py-2 rounded text-xs transition-colors ${isActive
-                      ? "bg-gold-400/15 text-gold-300 font-semibold border border-gold-400/40"
-                      : "text-safari-sand/80 hover:bg-safari-card hover:text-white"
-                      }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className={isActive ? "text-gold-400" : "text-safari-sand/60"}>
-                        {link.icon}
-                      </span>
-                      <span>{link.label}</span>
-                    </div>
-
-                    {link.badge && (
-                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-gold-400/20 text-gold-300 border border-gold-400/30">
-                        {link.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
+    <aside
+      className={`${
+        collapsed ? "w-20" : "w-64"
+      } h-screen flex flex-col bg-safari-night border-r border-safari-border transition-all duration-200`}
+    >
+      {/* ── Brand / Logo ── */}
+      <div className="px-4 pt-5 pb-4 border-b border-safari-border">
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/admin" className="flex items-center gap-3 min-w-0">
+            <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0 border border-gold-400/25 bg-safari-card">
+              <Image
+                src="/images/amber-plains-website-logo-transparent.png"
+                alt="Amber Plains"
+                fill
+                sizes="36px"
+                className="object-contain p-0.5"
+              />
             </div>
-          ))}
+            {!collapsed && (
+              <div className="min-w-0">
+                <span className="font-serif text-base font-normal text-white leading-tight block truncate">
+                  Amber Plains
+                </span>
+                <span className="text-[9px] font-mono uppercase tracking-widest text-gold-400 leading-none block mt-0.5">
+                  Operations Control
+                </span>
+              </div>
+            )}
+          </Link>
+
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="lg:hidden p-1.5 rounded-lg text-safari-sand/60 hover:text-white hover:bg-safari-card"
+              aria-label="Close navigation menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
+
+        {!collapsed && (
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-[10px] font-mono text-safari-sand/50">
+              All Systems Operational
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Footer Return Link */}
-      <div className="p-4 border-t border-safari-border bg-safari-card/40">
+      {/* ── Navigation ── */}
+      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {navGroups.map((group) => (
+          <div key={group.group}>
+            {!collapsed && (
+              <span className="px-2 mb-1.5 block text-[9px] font-mono uppercase tracking-[0.15em] text-safari-sand/40 font-semibold">
+                {group.group}
+              </span>
+            )}
+
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item.href);
+                const Icon = item.icon;
+
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      title={collapsed ? item.label : undefined}
+                      className={`
+                        group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-sans transition-colors duration-150
+                        ${collapsed ? "justify-center" : ""}
+                        ${
+                          active
+                            ? "bg-gold-400/12 text-white border border-gold-400/25"
+                            : "text-safari-sand/65 hover:bg-safari-card hover:text-safari-sand border border-transparent"
+                        }
+                      `}
+                    >
+                      {active && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-gold-400 rounded-r" />
+                      )}
+
+                      <Icon
+                        className={`w-4 h-4 shrink-0 transition-colors ${
+                          active
+                            ? "text-gold-400"
+                            : "text-safari-sand/50 group-hover:text-safari-sand/80"
+                        }`}
+                      />
+
+                      {!collapsed && (
+                        <>
+                          <span className="flex-1 text-sm leading-none truncate">
+                            {item.label}
+                          </span>
+
+                          {item.badge !== undefined && (
+                            <BadgePill
+                              badge={item.badge}
+                              variant={item.badgeVariant ?? "gold"}
+                            />
+                          )}
+                        </>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+
+      {/* ── Footer ── */}
+      <div className="px-3 py-3.5 border-t border-safari-border space-y-1">
         <a
-          href={publicWebsiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-between px-3 py-2 text-xs font-mono text-safari-sand/70 hover:text-gold-300 hover:bg-safari-card rounded transition-colors"
+          href={publicHref}
+          target={isStandalone ? "_blank" : "_self"}
+          rel="noreferrer"
+          title="Public Website"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-sans text-safari-sand/55 hover:text-safari-sand/90 hover:bg-safari-card transition-colors ${
+            collapsed ? "justify-center" : ""
+          }`}
         >
-          <span className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-gold-400" /> Public Website
-          </span>
-          <ArrowUpRight className="w-3.5 h-3.5" />
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+          {!collapsed && <span>Public Website</span>}
         </a>
+        {!collapsed && (
+          <div className="px-3 py-1 flex items-center justify-between">
+            <span className="text-[9px] font-mono text-safari-sand/35">
+              © 2026 Amber Plains
+            </span>
+            <span className="text-[9px] font-mono text-safari-sand/35">
+              v1.1.0
+            </span>
+          </div>
+        )}
       </div>
     </aside>
   );
-};
+}

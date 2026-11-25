@@ -1,19 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Settings,
-  Shield,
-  Key,
-  DollarSign,
-  Bell,
-  Users,
-  CheckCircle,
-  Clock,
-  Layers,
-} from "lucide-react";
-import { siteSettingsData } from "@/data/siteSettingsData";
-import { currentAdminUser } from "@/data/adminMockData";
+import { CheckCircle } from "lucide-react";
+import { SectionHeader, Card } from "@/components/admin/ui/AdminUIKit";
 
 export default function AdminSettingsPage() {
   const [baseCurrency, setBaseCurrency] = useState<string>("USD");
@@ -59,49 +48,43 @@ export default function AdminSettingsPage() {
   ];
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-safari-border">
-        <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-gold-400">
-            System Architecture & Governance
-          </span>
-          <h1 className="font-serif text-3xl font-normal text-white mt-1">
-            Reports, Role Access & Business Settings
-          </h1>
-        </div>
-
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 rounded bg-gold-400 text-safari-night font-mono text-xs font-semibold uppercase tracking-wider hover:bg-gold-300 transition-colors shadow-sm"
-        >
-          Save Settings
-        </button>
-      </div>
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <SectionHeader
+        eyebrow="System Architecture & Governance"
+        title="Reports, Role Access & Business Settings"
+        action={
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 rounded-lg bg-gold-400 text-safari-night font-mono text-xs font-semibold uppercase tracking-wider hover:bg-gold-300 transition-colors shadow-sm"
+          >
+            Save Settings
+          </button>
+        }
+      />
 
       {savedNote && (
-        <div className="p-4 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2 animate-fadeIn">
+        <div className="p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-200 text-xs flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{savedNote}</span>
         </div>
       )}
 
-      {/* Grid: Financial Configuration & Integrations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Currencies & Tax Rates */}
-        <section className="bg-safari-card border border-safari-border rounded-lg p-6 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="space-y-4">
           <div className="border-b border-safari-border pb-3">
             <h3 className="font-serif text-lg text-white">Currencies & Statutory Levies</h3>
-            <p className="text-xs text-safari-sand/60">Governs quoting calculations and tax compliance</p>
+            <p className="text-xs text-safari-sand/60">
+              Governs quoting calculations and tax compliance
+            </p>
           </div>
 
           <div className="space-y-4 text-xs font-mono">
             <div>
-              <label className="text-safari-sand/70 block mb-1">Base Quoting Currency</label>
+              <label className="text-safari-sand/70 block mb-1.5">Base Quoting Currency</label>
               <select
                 value={baseCurrency}
                 onChange={(e) => setBaseCurrency(e.target.value)}
-                className="w-full bg-safari-night border border-safari-border rounded p-2.5 text-white"
+                className="w-full bg-safari-night border border-safari-border rounded-lg p-2.5 text-white focus:outline-none focus:border-gold-400"
               >
                 <option value="USD">USD ($) - Primary International Currency</option>
                 <option value="KES">KES (KSh) - Kenya Shillings (Local Park Fees)</option>
@@ -112,37 +95,36 @@ export default function AdminSettingsPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-safari-sand/70 block mb-1">Kenya VAT Rate (%)</label>
+                <label className="text-safari-sand/70 block mb-1.5">Kenya VAT Rate (%)</label>
                 <input
                   type="number"
                   value={vatRate}
                   onChange={(e) => setVatRate(parseInt(e.target.value, 10) || 16)}
-                  className="w-full bg-safari-night border border-safari-border rounded p-2 text-white"
+                  className="w-full bg-safari-night border border-safari-border rounded-lg p-2.5 text-white focus:outline-none focus:border-gold-400"
                 />
               </div>
 
               <div>
-                <label className="text-safari-sand/70 block mb-1">Catering Levy (%)</label>
+                <label className="text-safari-sand/70 block mb-1.5">Catering Levy (%)</label>
                 <input
                   type="number"
                   value={cateringLevy}
                   onChange={(e) => setCateringLevy(parseInt(e.target.value, 10) || 2)}
-                  className="w-full bg-safari-night border border-safari-border rounded p-2 text-white"
+                  className="w-full bg-safari-night border border-safari-border rounded-lg p-2.5 text-white focus:outline-none focus:border-gold-400"
                 />
               </div>
             </div>
           </div>
-        </section>
+        </Card>
 
-        {/* Third-Party Service Credentials */}
-        <section className="bg-safari-card border border-safari-border rounded-lg p-6 space-y-4">
+        <Card className="space-y-4">
           <div className="border-b border-safari-border pb-3">
             <h3 className="font-serif text-lg text-white">Telephony & Gateway Providers</h3>
             <p className="text-xs text-safari-sand/60">API status and connectivity checks</p>
           </div>
 
           <div className="space-y-3 text-xs font-mono">
-            <div className="p-3 bg-safari-night rounded border border-safari-border flex items-center justify-between">
+            <div className="p-3.5 bg-safari-night rounded-xl border border-safari-border flex items-center justify-between">
               <div>
                 <span className="text-white block">Twilio / Africa&apos;s Talking SIP Trunk</span>
                 <span className="text-[10px] text-safari-sand/50">+254 700 123 456 (Voice Line)</span>
@@ -150,7 +132,7 @@ export default function AdminSettingsPage() {
               <span className="text-emerald-400 font-bold">Connected</span>
             </div>
 
-            <div className="p-3 bg-safari-night rounded border border-safari-border flex items-center justify-between">
+            <div className="p-3.5 bg-safari-night rounded-xl border border-safari-border flex items-center justify-between">
               <div>
                 <span className="text-white block">Stripe Payments (UK & US)</span>
                 <span className="text-[10px] text-safari-sand/50">Production Webhooks Active</span>
@@ -158,30 +140,36 @@ export default function AdminSettingsPage() {
               <span className="text-emerald-400 font-bold">Connected</span>
             </div>
 
-            <div className="p-3 bg-safari-night rounded border border-safari-border flex items-center justify-between">
+            <div className="p-3.5 bg-safari-night rounded-xl border border-safari-border flex items-center justify-between">
               <div>
                 <span className="text-white block">IntaSend Multi-Currency</span>
-                <span className="text-[10px] text-safari-sand/50">M-Pesa Express API + Virtual IBAN</span>
+                <span className="text-[10px] text-safari-sand/50">
+                  M-Pesa Express API + Virtual IBAN
+                </span>
               </div>
               <span className="text-emerald-400 font-bold">Connected</span>
             </div>
           </div>
-        </section>
+        </Card>
       </div>
 
-      {/* Immutable System Audit Log */}
-      <section className="bg-safari-card border border-safari-border rounded-lg overflow-hidden">
-        <div className="p-5 border-b border-safari-border flex items-center justify-between">
+      <Card noPadding className="overflow-hidden">
+        <div className="p-5 border-b border-safari-border flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="font-serif text-lg text-white">Security & Operational Audit Log</h3>
-            <p className="text-xs text-safari-sand/60">Immutable record of financial approvals, dispatch changes, and system events</p>
+            <p className="text-xs text-safari-sand/60">
+              Immutable record of financial approvals, dispatch changes, and system events
+            </p>
           </div>
           <span className="text-xs font-mono text-safari-sand/50">Live Audit Stream</span>
         </div>
 
         <div className="divide-y divide-safari-border text-xs">
           {auditLogs.map((log) => (
-            <div key={log.id} className="p-4 hover:bg-safari-night/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div
+              key={log.id}
+              className="p-4 hover:bg-safari-night/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors"
+            >
               <div className="space-y-0.5">
                 <span className="font-serif text-white font-medium block">{log.action}</span>
                 <div className="flex items-center gap-2 text-[11px] font-mono text-safari-sand/60">
@@ -194,7 +182,7 @@ export default function AdminSettingsPage() {
             </div>
           ))}
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

@@ -1,25 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  Calculator,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  CheckCircle,
-  FileText,
-  DollarSign,
-  Percent,
-  ShieldCheck,
-  Download,
-  Eye,
-} from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Download } from "lucide-react";
 import { costingEngine } from "@/services/costingEngine";
-import { CostingLineItem, CostItemCategory } from "@/types/admin";
-import { mockSuppliers } from "@/data/adminMockData";
+import { CostingLineItem } from "@/types/admin";
+import { SectionHeader, Card } from "@/components/admin/ui/AdminUIKit";
 
 export default function AdminCostingPage() {
-  // Line items state
   const [lineItems, setLineItems] = useState<CostingLineItem[]>([
     {
       id: "li-1",
@@ -29,8 +16,8 @@ export default function AdminCostingPage() {
       description: "Satao Tented Camp (Tsavo East) - 3 Nights Luxury Tent (High Season)",
       rateBasis: "per_person_per_night",
       unitCost: 260,
-      quantity: 2, // 2 guests
-      multiplier: 3, // 3 nights
+      quantity: 2,
+      multiplier: 3,
       currency: "USD",
       exchangeRateToUsd: 1,
       totalCostUsd: 1560,
@@ -56,7 +43,7 @@ export default function AdminCostingPage() {
       category: "park_conservancy_fee",
       description: "Kenya Wildlife Service Tsavo East Park Entry Fees (Non-Resident)",
       rateBasis: "per_person_total",
-      unitCost: 104, // $52/day x 2 days
+      unitCost: 104,
       quantity: 2,
       multiplier: 1,
       currency: "USD",
@@ -92,13 +79,11 @@ export default function AdminCostingPage() {
     },
   ]);
 
-  // Parameters
-  const [contingencyRate, setContingencyRate] = useState<number>(0.05); // 5%
-  const [markupRate, setMarkupRate] = useState<number>(0.28); // 28%
-  const [minThresholdMargin, setMinThresholdMargin] = useState<number>(0.18); // 18% minimum gross margin
+  const [contingencyRate, setContingencyRate] = useState<number>(0.05);
+  const [markupRate, setMarkupRate] = useState<number>(0.28);
+  const [minThresholdMargin, setMinThresholdMargin] = useState<number>(0.18);
   const [activeTab, setActiveTab] = useState<"calculator" | "guest_quote">("calculator");
 
-  // Deterministic calculation
   const calculation = useMemo(() => {
     return costingEngine.calculate({
       lineItems,
@@ -108,7 +93,6 @@ export default function AdminCostingPage() {
     });
   }, [lineItems, contingencyRate, markupRate, minThresholdMargin]);
 
-  // Add line item
   const handleAddLineItem = () => {
     const newItem: CostingLineItem = {
       id: `li-${Date.now()}`,
@@ -130,52 +114,49 @@ export default function AdminCostingPage() {
     setLineItems(lineItems.filter((item) => item.id !== id));
   };
 
-  const handleUpdateItem = (id: string, field: keyof CostingLineItem, value: any) => {
+  const handleUpdateItem = (
+    id: string,
+    field: keyof CostingLineItem,
+    value: string | number | boolean
+  ) => {
     setLineItems(
       lineItems.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-safari-border">
-        <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-gold-400">
-            Deterministic Margin Engine
-          </span>
-          <h1 className="font-serif text-3xl font-normal text-white mt-1">
-            Costing, Markup & Profit Protection
-          </h1>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <SectionHeader
+        eyebrow="Deterministic Margin Engine"
+        title="Costing, Markup & Profit Protection"
+        action={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("calculator")}
+              className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase transition-colors ${
+                activeTab === "calculator"
+                  ? "bg-gold-400 text-safari-night font-bold"
+                  : "bg-safari-card border border-safari-border text-safari-sand hover:text-white"
+              }`}
+            >
+              Staff Costing Breakdown
+            </button>
+            <button
+              onClick={() => setActiveTab("guest_quote")}
+              className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase transition-colors ${
+                activeTab === "guest_quote"
+                  ? "bg-gold-400 text-safari-night font-bold"
+                  : "bg-safari-card border border-safari-border text-safari-sand hover:text-white"
+              }`}
+            >
+              Guest Presentation
+            </button>
+          </div>
+        }
+      />
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab("calculator")}
-            className={`px-3.5 py-2 rounded text-xs font-mono uppercase transition-colors ${
-              activeTab === "calculator"
-                ? "bg-gold-400 text-safari-night font-bold"
-                : "bg-safari-card border border-safari-border text-safari-sand hover:text-white"
-            }`}
-          >
-            Staff Costing Breakdown
-          </button>
-          <button
-            onClick={() => setActiveTab("guest_quote")}
-            className={`px-3.5 py-2 rounded text-xs font-mono uppercase transition-colors ${
-              activeTab === "guest_quote"
-                ? "bg-gold-400 text-safari-night font-bold"
-                : "bg-safari-card border border-safari-border text-safari-sand hover:text-white"
-            }`}
-          >
-            Guest Presentation
-          </button>
-        </div>
-      </div>
-
-      {/* Threshold / Profit Warning Banner */}
       {calculation.belowThresholdWarning && (
-        <div className="p-4 rounded bg-rose-950/80 border border-rose-500 text-rose-200 text-xs flex items-start gap-3 animate-fadeIn">
+        <div className="p-4 rounded-xl bg-rose-950/80 border border-rose-500 text-rose-200 text-xs flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <span className="font-mono uppercase font-bold block text-rose-300">
@@ -191,10 +172,10 @@ export default function AdminCostingPage() {
       )}
 
       {activeTab === "calculator" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Interactive Costing Line Items */}
-          <div className="lg:col-span-8 bg-safari-card border border-safari-border rounded-lg p-6 space-y-6">
-            <div className="flex items-center justify-between border-b border-safari-border pb-4">
+          <Card className="lg:col-span-8 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-safari-border pb-4">
               <div>
                 <h3 className="font-serif text-xl text-white">Itemized Direct Expense Lines</h3>
                 <p className="text-xs text-safari-sand/60">
@@ -203,17 +184,17 @@ export default function AdminCostingPage() {
               </div>
               <button
                 onClick={handleAddLineItem}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-safari-night hover:bg-safari-surface border border-safari-border text-xs font-mono text-gold-400 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-safari-night hover:bg-safari-surface border border-safari-border text-xs font-mono text-gold-400 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Line
               </button>
             </div>
 
             <div className="space-y-4">
-              {lineItems.map((item, idx) => (
+              {lineItems.map((item) => (
                 <div
                   key={item.id}
-                  className="p-4 rounded bg-safari-night border border-safari-border space-y-3"
+                  className="p-4 rounded-xl bg-safari-night border border-safari-border space-y-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-mono uppercase text-gold-400 bg-safari-card px-2 py-0.5 rounded border border-safari-border">
@@ -223,6 +204,7 @@ export default function AdminCostingPage() {
                       onClick={() => handleRemoveLineItem(item.id)}
                       className="text-safari-sand/40 hover:text-rose-400 p-1"
                       title="Remove line"
+                      aria-label="Remove line item"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -232,12 +214,14 @@ export default function AdminCostingPage() {
                     type="text"
                     value={item.description}
                     onChange={(e) => handleUpdateItem(item.id, "description", e.target.value)}
-                    className="w-full bg-safari-card border border-safari-border rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-gold-400 font-serif"
+                    className="w-full bg-safari-card border border-safari-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-400 font-serif"
                   />
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
                     <div>
-                      <span className="text-safari-sand/50 block text-[10px]">UNIT NET COST</span>
+                      <span className="text-safari-sand/50 block text-[10px] mb-1">
+                        UNIT NET COST
+                      </span>
                       <div className="flex items-center gap-1">
                         <span className="text-safari-sand/50">$</span>
                         <input
@@ -246,38 +230,44 @@ export default function AdminCostingPage() {
                           onChange={(e) =>
                             handleUpdateItem(item.id, "unitCost", parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-safari-card border border-safari-border rounded px-2 py-1 text-xs text-white"
+                          className="w-full bg-safari-card border border-safari-border rounded-lg px-2 py-1.5 text-xs text-white"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-safari-sand/50 block text-[10px]">GUESTS / UNITS</span>
+                      <span className="text-safari-sand/50 block text-[10px] mb-1">
+                        GUESTS / UNITS
+                      </span>
                       <input
                         type="number"
                         value={item.quantity}
                         onChange={(e) =>
                           handleUpdateItem(item.id, "quantity", parseInt(e.target.value, 10) || 1)
                         }
-                        className="w-full bg-safari-card border border-safari-border rounded px-2 py-1 text-xs text-white"
+                        className="w-full bg-safari-card border border-safari-border rounded-lg px-2 py-1.5 text-xs text-white"
                       />
                     </div>
 
                     <div>
-                      <span className="text-safari-sand/50 block text-[10px]">NIGHTS / DAYS</span>
+                      <span className="text-safari-sand/50 block text-[10px] mb-1">
+                        NIGHTS / DAYS
+                      </span>
                       <input
                         type="number"
                         value={item.multiplier}
                         onChange={(e) =>
                           handleUpdateItem(item.id, "multiplier", parseInt(e.target.value, 10) || 1)
                         }
-                        className="w-full bg-safari-card border border-safari-border rounded px-2 py-1 text-xs text-white"
+                        className="w-full bg-safari-card border border-safari-border rounded-lg px-2 py-1.5 text-xs text-white"
                       />
                     </div>
 
                     <div>
-                      <span className="text-safari-sand/50 block text-[10px]">SUBTOTAL (USD)</span>
-                      <span className="text-gold-300 font-bold block pt-1">
+                      <span className="text-safari-sand/50 block text-[10px] mb-1">
+                        SUBTOTAL (USD)
+                      </span>
+                      <span className="text-gold-300 font-bold block pt-1.5">
                         ${(item.unitCost * item.quantity * item.multiplier).toLocaleString()}
                       </span>
                     </div>
@@ -285,16 +275,15 @@ export default function AdminCostingPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Right Column: Pricing Controls & Margin Protection */}
-          <div className="lg:col-span-4 bg-safari-card border border-safari-border rounded-lg p-6 space-y-6">
+          <Card className="lg:col-span-4 space-y-6">
             <h3 className="font-serif text-xl text-white border-b border-safari-border pb-3">
               Commercial Pricing Controls
             </h3>
 
-            {/* Formula Policy Explanation */}
-            <div className="p-3 bg-safari-night rounded border border-safari-border text-[11px] font-mono text-safari-sand/70 space-y-1">
+            <div className="p-3.5 bg-safari-night rounded-xl border border-safari-border text-[11px] font-mono text-safari-sand/70 space-y-1">
               <span className="text-gold-400 font-bold block uppercase text-[10px]">
                 Deterministic Formula:
               </span>
@@ -305,13 +294,13 @@ export default function AdminCostingPage() {
               </p>
             </div>
 
-            {/* Sliders / Inputs */}
             <div className="space-y-4 text-xs font-mono">
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-safari-sand/70">CONTINGENCY BUFFER:</span>
                   <span className="text-gold-300 font-bold">
-                    {Math.round(contingencyRate * 100)}% (${calculation.contingencyBufferUsd.toLocaleString()})
+                    {Math.round(contingencyRate * 100)}% ($
+                    {calculation.contingencyBufferUsd.toLocaleString()})
                   </span>
                 </div>
                 <input
@@ -328,9 +317,7 @@ export default function AdminCostingPage() {
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-safari-sand/70">COMMERCIAL MARKUP RATE:</span>
-                  <span className="text-gold-300 font-bold">
-                    {Math.round(markupRate * 100)}%
-                  </span>
+                  <span className="text-gold-300 font-bold">{Math.round(markupRate * 100)}%</span>
                 </div>
                 <input
                   type="range"
@@ -362,7 +349,6 @@ export default function AdminCostingPage() {
               </div>
             </div>
 
-            {/* Summary Outputs Table */}
             <div className="pt-4 border-t border-safari-border space-y-2 text-xs font-mono">
               <div className="flex justify-between text-safari-sand/70">
                 <span>Total Direct Net Cost:</span>
@@ -370,11 +356,15 @@ export default function AdminCostingPage() {
               </div>
               <div className="flex justify-between text-safari-sand/70">
                 <span>Contingency Buffer ({Math.round(contingencyRate * 100)}%):</span>
-                <span className="text-white">${calculation.contingencyBufferUsd.toLocaleString()}</span>
+                <span className="text-white">
+                  ${calculation.contingencyBufferUsd.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between text-safari-sand/70">
                 <span>Effective Cost Basis:</span>
-                <span className="text-white font-bold">${calculation.effectiveTotalCostUsd.toLocaleString()}</span>
+                <span className="text-white font-bold">
+                  ${calculation.effectiveTotalCostUsd.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between text-safari-sand/70">
                 <span>Gross Profit (USD):</span>
@@ -401,19 +391,21 @@ export default function AdminCostingPage() {
               </div>
             </div>
 
-            {/* Commit Quote Action */}
             <button
-              onClick={() => alert(`Quote Version committed to database for $${calculation.sellingPriceUsd.toLocaleString()}. Historical net rates locked.`)}
-              className="w-full py-3 rounded bg-gold-400 hover:bg-gold-300 text-safari-night font-mono text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+              onClick={() =>
+                alert(
+                  `Quote Version committed to database for $${calculation.sellingPriceUsd.toLocaleString()}. Historical net rates locked.`
+                )
+              }
+              className="w-full py-3 rounded-lg bg-gold-400 hover:bg-gold-300 text-safari-night font-mono text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
             >
               Lock & Generate Quote Version
             </button>
-          </div>
+          </Card>
         </div>
       ) : (
-        /* Guest-Facing Quotation Preview (Confidential supplier details stripped) */
-        <div className="max-w-3xl mx-auto bg-white text-safari-night rounded-lg p-8 sm:p-12 shadow-luxury space-y-8">
-          <div className="flex items-center justify-between border-b border-safari-sand pb-6">
+        <div className="max-w-3xl mx-auto bg-white text-safari-night rounded-2xl p-6 sm:p-10 shadow-luxury space-y-8">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-safari-sand pb-6">
             <div>
               <span className="font-serif text-2xl font-bold tracking-wide">Amber Plains Travel</span>
               <span className="block text-[10px] font-mono uppercase text-safari-stone">
@@ -443,9 +435,11 @@ export default function AdminCostingPage() {
             </p>
           </div>
 
-          <div className="p-6 rounded bg-safari-cream border border-safari-sand flex items-center justify-between">
+          <div className="p-6 rounded-xl bg-safari-cream border border-safari-sand flex flex-wrap items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-mono uppercase text-safari-stone block">TOTAL INVESTMENT (2 GUESTS)</span>
+              <span className="text-xs font-mono uppercase text-safari-stone block">
+                TOTAL INVESTMENT (2 GUESTS)
+              </span>
               <span className="font-serif text-3xl font-bold text-safari-night">
                 ${calculation.sellingPriceUsd.toLocaleString()} USD
               </span>
@@ -458,7 +452,6 @@ export default function AdminCostingPage() {
             </div>
           </div>
 
-          {/* Inclusions */}
           <div className="space-y-3 text-xs">
             <h4 className="font-serif text-base font-bold text-safari-night">
               What Is Included In Your Journey:
@@ -473,11 +466,11 @@ export default function AdminCostingPage() {
             </ul>
           </div>
 
-          <div className="pt-6 border-t border-safari-sand flex items-center justify-between text-xs font-mono text-safari-stone">
+          <div className="pt-6 border-t border-safari-sand flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-safari-stone">
             <span>Confidential Net Rates & Margins Are Scrubbed</span>
             <button
               onClick={() => alert("Guest PDF Export generated successfully.")}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-safari-night text-white text-xs font-mono uppercase hover:bg-gold-600 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-safari-night text-white text-xs font-mono uppercase hover:bg-gold-600 transition-colors"
             >
               <Download className="w-4 h-4 text-gold-400" /> Export Guest PDF
             </button>
