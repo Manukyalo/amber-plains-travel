@@ -30,7 +30,8 @@ const ADMIN_ROUTES: CommandItem[] = [
   { id: "rt-suppliers", label: "Supplier Contracts", subtitle: "Lodges, camps & confidential net rates", category: "Route", href: "/admin/suppliers" },
   { id: "rt-packages", label: "Packages & Routes", subtitle: "Itineraries & catalog portfolio", category: "Route", href: "/admin/packages" },
   { id: "rt-receptionist", label: "AI Receptionist", subtitle: "Inbound call logs & lead capture", category: "Route", href: "/admin/receptionist" },
-  { id: "rt-settings", label: "Reports & Settings", subtitle: "Governance, levies & audit stream", category: "Route", href: "/admin/settings" },
+  { id: "rt-audit", label: "Immutable Audit Trail", subtitle: "Compliance, role changes & payment logs", category: "Route", href: "/admin/audit" },
+  { id: "rt-settings", label: "Reports & Settings", subtitle: "Governance, levies & RBAC matrix", category: "Route", href: "/admin/settings" },
 ];
 
 interface CommandPaletteProps {

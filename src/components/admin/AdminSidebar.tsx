@@ -23,6 +23,7 @@ import {
   X,
   CloudSun,
   ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { mockBookings } from "@/data/adminMockData";
 import { TODAY_ISO, isBookingActivePipeline } from "@/utils/bookingDates";
@@ -140,6 +141,7 @@ export function AdminSidebar({ collapsed = false, onCloseMobile }: AdminSidebarP
     {
       group: "Governance",
       items: [
+        { label: "Audit Trail", href: "/admin/audit", icon: ShieldCheck },
         { label: "Reports & Settings", href: "/admin/settings", icon: Settings },
       ],
     },

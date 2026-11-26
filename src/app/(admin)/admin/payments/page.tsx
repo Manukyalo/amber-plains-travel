@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   DollarSign,
   CheckCircle2,
@@ -8,8 +8,9 @@ import {
   Download,
   ShieldCheck,
   AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
-import { mockTransactions } from "@/data/adminMockData";
+import { mockTransactions, mockBookings } from "@/data/adminMockData";
 import { TransactionRecord } from "@/types/admin";
 import {
   SectionHeader,
@@ -19,6 +20,44 @@ import {
 } from "@/components/admin/ui/AdminUIKit";
 
 const USD_TO_KES = 129;
+const RECONCILIATION_AGE_MS = 30 * 60_000;
+
+function exportTransactionsCsv(rows: TransactionRecord[]): void {
+  const header = [
+    "Tx ID",
+    "Booking Ref",
+    "Provider",
+    "Provider Tx ID",
+    "Amount",
+    "Currency",
+    "Status",
+    "Type",
+    "Timestamp",
+  ];
+  const lines = rows.map((t) =>
+    [
+      t.id,
+      t.bookingReference,
+      t.provider,
+      t.providerTransactionId,
+      (t.amountCents / 100).toFixed(2),
+      t.currency,
+      t.status,
+      t.type,
+      t.createdAt,
+    ]
+      .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+      .join(",")
+  );
+  const csv = [header.join(","), ...lines].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `amber-plains-ledger-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function AdminPaymentsPage() {
   const [transactions, setTransactions] = useState<TransactionRecord[]>(mockTransactions);
@@ -34,7 +73,33 @@ export default function AdminPaymentsPage() {
     .filter((t) => t.status === "succeeded")
     .reduce((sum, t) => sum + t.amountCents, 0);
 
-  const pendingCount = transactions.filter((t) => t.status === "pending").length;
+  const pendingTransactions = useMemo(
+    () => transactions.filter((t) => t.status === "pending"),
+    [transactions]
+  );
+  const pendingCount = pendingTransactions.length;
+
+  const stalePendingTransactions = useMemo(
+    () =>
+      pendingTransactions.filter(
+        (t) => Date.now() - new Date(t.createdAt).getTime() > RECONCILIATION_AGE_MS
+      ),
+    [pendingTransactions]
+  );
+
+  const totalReceivablesUsd = useMemo(
+    () => mockBookings.reduce((sum, b) => sum + b.balanceDueUsd, 0),
+    []
+  );
+
+  const handleRunReconciliation = () => {
+    setSuccessNote(
+      stalePendingTransactions.length === 0
+        ? "Reconciliation check complete: 0 stale pending transactions (>30 min)."
+        : `Reconciliation flagged ${stalePendingTransactions.length} pending transaction(s) older than 30 min for provider status verification.`
+    );
+    setTimeout(() => setSuccessNote(null), 5000);
+  };
 
   const handleSimulatePaymentWebhook = async (action: "succeeded" | "failed" | "refund") => {
     setIsProcessing(true);
@@ -79,12 +144,20 @@ export default function AdminPaymentsPage() {
         eyebrow="Treasury & Multi-Gateway Ledger"
         title="Payments, Receipts & Immutable Audit Ledger"
         action={
-          <button
-            onClick={() => alert("CSV Export of verified transactions downloaded.")}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-safari-card border border-safari-border text-xs font-mono text-safari-sand hover:text-white hover:border-gold-400 transition-colors"
-          >
-            <Download className="w-4 h-4 text-gold-400" /> Export Financial Ledger (CSV)
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleRunReconciliation}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-safari-card border border-safari-border text-xs font-mono text-safari-sand hover:text-white hover:border-gold-400 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-gold-400" /> Reconcile Pending
+            </button>
+            <button
+              onClick={() => exportTransactionsCsv(transactions)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-safari-card border border-safari-border text-xs font-mono text-safari-sand hover:text-white hover:border-gold-400 transition-colors"
+            >
+              <Download className="w-4 h-4 text-gold-400" /> Export Financial Ledger (CSV)
+            </button>
+          </div>
         }
       />
 
@@ -123,11 +196,38 @@ export default function AdminPaymentsPage() {
         <KpiCard
           label="Pending Callbacks"
           value={pendingCount}
-          subtext="M-Pesa prompt awaiting guest PIN"
+          subtext={
+            stalePendingTransactions.length > 0
+              ? `${stalePendingTransactions.length} stale (>30m) · Reconcile`
+              : "M-Pesa prompt awaiting guest PIN"
+          }
           icon={Clock}
           variant="rose"
         />
       </div>
+
+      {/* Stale Pending Reconciliation Alert */}
+      {stalePendingTransactions.length > 0 && (
+        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5 text-xs text-amber-200">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-300">
+                {stalePendingTransactions.length} Pending Transaction(s) Older Than 30 Minutes
+              </p>
+              <p className="text-amber-200/70 mt-0.5">
+                Verify provider status via M-Pesa / IntaSend query API before releasing safari vouchers.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleRunReconciliation}
+            className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-mono uppercase hover:bg-amber-500/30 transition-colors"
+          >
+            Run Reconciliation
+          </button>
+        </div>
+      )}
 
       {/* Simulation / Payment Link Creation Workspace */}
       <Card className="space-y-4">
@@ -240,8 +340,8 @@ export default function AdminPaymentsPage() {
                         tx.status === "succeeded"
                           ? "confirmed"
                           : tx.status === "pending"
-                          ? "pending"
-                          : "alert"
+                            ? "pending"
+                            : "alert"
                       }
                     />
                   </td>
@@ -250,6 +350,63 @@ export default function AdminPaymentsPage() {
                   </td>
                   <td className="py-3.5 px-4 font-mono text-[10px] text-safari-sand/50 whitespace-nowrap">
                     {tx.createdAt.replace("T", " ").slice(0, 19)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Booking Receivables & Deposit Collection Ledger */}
+      <Card noPadding className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-safari-border flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span className="text-xs font-mono uppercase tracking-wider text-safari-sand/70 block">
+              Booking Receivables & Deposit Collection ({mockBookings.length})
+            </span>
+            <span className="text-[11px] text-safari-sand/50">
+              Total Outstanding Receivables: ${totalReceivablesUsd.toLocaleString()} USD (KES{" "}
+              {(totalReceivablesUsd * USD_TO_KES).toLocaleString()})
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-gold-400">
+            1 USD = {USD_TO_KES} KES
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[700px]">
+            <thead className="bg-safari-night/70 text-[10px] font-mono uppercase text-safari-sand/60 border-b border-safari-border">
+              <tr>
+                <th className="py-3 px-4">Booking Ref</th>
+                <th className="py-3 px-4">Guest</th>
+                <th className="py-3 px-4">Total Price</th>
+                <th className="py-3 px-4">Deposit</th>
+                <th className="py-3 px-4">Balance Due</th>
+                <th className="py-3 px-4">Due Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-safari-border text-safari-sand/90">
+              {mockBookings.map((b) => (
+                <tr key={b.id} className="hover:bg-safari-night/50 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-bold text-gold-300">
+                    {b.referenceCode}
+                  </td>
+                  <td className="py-3.5 px-4 text-white">{b.guest.fullName}</td>
+                  <td className="py-3.5 px-4 font-mono text-white">
+                    ${b.totalSellingPriceUsd.toLocaleString()}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono">
+                    <span className={b.depositPaid ? "text-emerald-400" : "text-amber-400"}>
+                      ${b.depositAmountUsd.toLocaleString()} ({b.depositPaid ? "Paid" : "Pending"})
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-white">
+                    ${b.balanceDueUsd.toLocaleString()}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-[11px] text-safari-sand/60">
+                    {b.balanceDueDate}
                   </td>
                 </tr>
               ))}

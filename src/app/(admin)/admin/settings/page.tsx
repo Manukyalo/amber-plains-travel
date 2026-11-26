@@ -1,8 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle, Shield, ArrowUpRight } from "lucide-react";
 import { SectionHeader, Card } from "@/components/admin/ui/AdminUIKit";
+
+const RBAC_MATRIX = [
+  { role: "admin", bookings: "Full", finance: "Full", fleet: "Full", rates: "Full", governance: "Full" },
+  { role: "operations", bookings: "Read/Write", finance: "Read", fleet: "Full", rates: "Read", governance: "SOS + Audit" },
+  { role: "finance", bookings: "Read", finance: "Full", fleet: "Read", rates: "Approve", governance: "Audit" },
+  { role: "sales", bookings: "Create/Edit", finance: "Quotes", fleet: "Read", rates: "View Selling", governance: "None" },
+  { role: "driver", bookings: "Assigned Only", finance: "None", fleet: "Assigned Only", rates: "None", governance: "SOS Trigger" },
+  { role: "guest", bookings: "Own Only", finance: "Own Invoices", fleet: "None", rates: "None", governance: "None" },
+];
 
 export default function AdminSettingsPage() {
   const [baseCurrency, setBaseCurrency] = useState<string>("USD");
@@ -152,6 +162,53 @@ export default function AdminSettingsPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="space-y-4">
+        <div className="border-b border-safari-border pb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-gold-400" />
+              <h3 className="font-serif text-lg text-white">Least-Privilege RBAC Matrix</h3>
+            </div>
+            <p className="text-xs text-safari-sand/60">
+              Enforced at Supabase Row Level Security (RLS) and API route boundaries
+            </p>
+          </div>
+          <Link
+            href="/admin/audit"
+            className="inline-flex items-center gap-1 text-xs font-mono text-gold-400 hover:text-gold-300"
+          >
+            Open Full Audit Trail <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[600px]">
+            <thead className="bg-safari-night/70 text-[10px] font-mono uppercase text-safari-sand/60 border-b border-safari-border">
+              <tr>
+                <th className="py-2.5 px-3">Role</th>
+                <th className="py-2.5 px-3">Bookings</th>
+                <th className="py-2.5 px-3">Payments & Quotes</th>
+                <th className="py-2.5 px-3">Fleet & Dispatch</th>
+                <th className="py-2.5 px-3">Supplier Net Rates</th>
+                <th className="py-2.5 px-3">Governance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-safari-border text-safari-sand/85">
+              {RBAC_MATRIX.map((row) => (
+                <tr key={row.role} className="hover:bg-safari-night/40">
+                  <td className="py-2.5 px-3 font-mono font-bold text-gold-400 uppercase">{row.role}</td>
+                  <td className="py-2.5 px-3 font-mono">{row.bookings}</td>
+                  <td className="py-2.5 px-3 font-mono">{row.finance}</td>
+                  <td className="py-2.5 px-3 font-mono">{row.fleet}</td>
+                  <td className="py-2.5 px-3 font-mono">{row.rates}</td>
+                  <td className="py-2.5 px-3 font-mono">{row.governance}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       <Card noPadding className="overflow-hidden">
         <div className="p-5 border-b border-safari-border flex flex-wrap items-center justify-between gap-2">

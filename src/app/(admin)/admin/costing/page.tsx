@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Plus, Trash2, AlertTriangle, Download } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Download, TrendingUp, RefreshCw } from "lucide-react";
 import { costingEngine } from "@/services/costingEngine";
+import { mockBookings } from "@/data/adminMockData";
 import { CostingLineItem } from "@/types/admin";
 import { SectionHeader, Card } from "@/components/admin/ui/AdminUIKit";
 
@@ -82,7 +83,10 @@ export default function AdminCostingPage() {
   const [contingencyRate, setContingencyRate] = useState<number>(0.05);
   const [markupRate, setMarkupRate] = useState<number>(0.28);
   const [minThresholdMargin, setMinThresholdMargin] = useState<number>(0.18);
-  const [activeTab, setActiveTab] = useState<"calculator" | "guest_quote">("calculator");
+  const [kesPerUsd, setKesPerUsd] = useState<number>(129);
+  const [activeTab, setActiveTab] = useState<"calculator" | "guest_quote" | "portfolio">(
+    "calculator"
+  );
 
   const calculation = useMemo(() => {
     return costingEngine.calculate({
@@ -133,23 +137,30 @@ export default function AdminCostingPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab("calculator")}
-              className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase transition-colors ${
-                activeTab === "calculator"
+              className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase transition-colors ${activeTab === "calculator"
                   ? "bg-gold-400 text-safari-night font-bold"
                   : "bg-safari-card border border-safari-border text-safari-sand hover:text-white"
-              }`}
+                }`}
             >
               Staff Costing Breakdown
             </button>
             <button
               onClick={() => setActiveTab("guest_quote")}
-              className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase transition-colors ${
-                activeTab === "guest_quote"
+              className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase transition-colors ${activeTab === "guest_quote"
                   ? "bg-gold-400 text-safari-night font-bold"
                   : "bg-safari-card border border-safari-border text-safari-sand hover:text-white"
-              }`}
+                }`}
             >
               Guest Presentation
+            </button>
+            <button
+              onClick={() => setActiveTab("portfolio")}
+              className={`px-3.5 py-2 rounded-lg text-xs font-mono uppercase transition-colors ${activeTab === "portfolio"
+                  ? "bg-gold-400 text-safari-night font-bold"
+                  : "bg-safari-card border border-safari-border text-safari-sand hover:text-white"
+                }`}
+            >
+              Portfolio & FX
             </button>
           </div>
         }
@@ -375,9 +386,8 @@ export default function AdminCostingPage() {
               <div className="flex justify-between text-safari-sand/70">
                 <span>Resulting Gross Margin:</span>
                 <span
-                  className={`font-bold ${
-                    calculation.belowThresholdWarning ? "text-rose-400" : "text-emerald-400"
-                  }`}
+                  className={`font-bold ${calculation.belowThresholdWarning ? "text-rose-400" : "text-emerald-400"
+                    }`}
                 >
                   {calculation.grossMarginPercentage}%
                 </span>
@@ -475,6 +485,91 @@ export default function AdminCostingPage() {
               <Download className="w-4 h-4 text-gold-400" /> Export Guest PDF
             </button>
           </div>
+        </div>
+      )}
+
+      {activeTab === "portfolio" && (
+        <div className="space-y-6">
+          <Card className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-gold-400" />
+                <h3 className="font-serif text-lg text-white">KES / USD Exchange Rate Manager</h3>
+              </div>
+              <p className="text-xs text-safari-sand/60 mt-0.5">
+                Adjust operational conversion rate for park fees, fuel, and lodge settlements.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs font-mono text-safari-sand/70">1 USD =</label>
+              <input
+                type="number"
+                min={80}
+                max={250}
+                step={0.5}
+                value={kesPerUsd}
+                onChange={(e) => setKesPerUsd(Math.max(1, parseFloat(e.target.value) || 129))}
+                className="w-24 bg-safari-night border border-safari-border rounded-lg px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-gold-400"
+              />
+              <span className="text-xs font-mono text-gold-400">KES</span>
+              <button
+                onClick={() => setKesPerUsd(129)}
+                className="p-2 rounded-lg bg-safari-night border border-safari-border text-safari-sand/60 hover:text-white"
+                title="Reset to 129 KES"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </Card>
+
+          <Card noPadding className="overflow-hidden">
+            <div className="px-5 py-4 border-b border-safari-border flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-wider text-safari-sand/70">
+                Active Safari Portfolio Yield ({mockBookings.length} Bookings)
+              </span>
+              <span className="text-xs font-mono text-gold-400">
+                Total Pipeline: $
+                {mockBookings.reduce((s, b) => s + b.totalSellingPriceUsd, 0).toLocaleString()} USD
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[680px]">
+                <thead className="bg-safari-night/70 text-[10px] font-mono uppercase text-safari-sand/60 border-b border-safari-border">
+                  <tr>
+                    <th className="py-3 px-4">Reference</th>
+                    <th className="py-3 px-4">Itinerary</th>
+                    <th className="py-3 px-4">Days</th>
+                    <th className="py-3 px-4">Selling (USD)</th>
+                    <th className="py-3 px-4">Selling (KES)</th>
+                    <th className="py-3 px-4">Daily Yield</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-safari-border text-safari-sand/90">
+                  {mockBookings.map((b) => {
+                    const dailyUsd = Math.round(b.totalSellingPriceUsd / Math.max(1, b.durationDays));
+                    return (
+                      <tr key={b.id} className="hover:bg-safari-night/50 transition-colors">
+                        <td className="py-3.5 px-4 font-mono font-bold text-gold-300">
+                          {b.referenceCode}
+                        </td>
+                        <td className="py-3.5 px-4 text-white">{b.customTitle}</td>
+                        <td className="py-3.5 px-4 font-mono">{b.durationDays}d</td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-white">
+                          ${b.totalSellingPriceUsd.toLocaleString()}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-safari-sand/70">
+                          KES {Math.round(b.totalSellingPriceUsd * kesPerUsd).toLocaleString()}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-emerald-400">
+                          ${dailyUsd.toLocaleString()}/day
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
       )}
     </div>
