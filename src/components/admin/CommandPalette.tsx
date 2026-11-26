@@ -25,6 +25,8 @@ const ADMIN_ROUTES: CommandItem[] = [
   { id: "rt-payments", label: "Payments & Ledger", subtitle: "Stripe, IntaSend & M-Pesa audit log", category: "Route", href: "/admin/payments" },
   { id: "rt-fleet", label: "4x4 Safari Fleet", subtitle: "Vehicles, odometers & workshop service", category: "Route", href: "/admin/fleet" },
   { id: "rt-guides", label: "Guides & Drivers", subtitle: "KPSGA naturalists & driver roster", category: "Route", href: "/admin/guides" },
+  { id: "rt-weather", label: "Weather Intelligence", subtitle: "Live Open-Meteo conditions & park advisories", category: "Route", href: "/admin/weather" },
+  { id: "rt-sos", label: "SOS Command Console", subtitle: "Emergency field incidents & recovery", category: "Route", href: "/admin/sos-alerts" },
   { id: "rt-suppliers", label: "Supplier Contracts", subtitle: "Lodges, camps & confidential net rates", category: "Route", href: "/admin/suppliers" },
   { id: "rt-packages", label: "Packages & Routes", subtitle: "Itineraries & catalog portfolio", category: "Route", href: "/admin/packages" },
   { id: "rt-receptionist", label: "AI Receptionist", subtitle: "Inbound call logs & lead capture", category: "Route", href: "/admin/receptionist" },

@@ -21,9 +21,12 @@ import {
   Settings,
   ExternalLink,
   X,
+  CloudSun,
+  ShieldAlert,
 } from "lucide-react";
 import { mockBookings } from "@/data/adminMockData";
 import { TODAY_ISO, isBookingActivePipeline } from "@/utils/bookingDates";
+import { useOpsIntelligence } from "@/contexts/OpsIntelligenceContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -78,10 +81,12 @@ function BadgePill({
 export function AdminSidebar({ collapsed = false, onCloseMobile }: AdminSidebarProps) {
   const pathname = usePathname();
   const isStandalone = useIsStandaloneAdmin();
+  const { activeSosAlerts } = useOpsIntelligence();
 
   const activeBookingsCount = mockBookings.filter((b) =>
     isBookingActivePipeline(b, TODAY_ISO)
   ).length;
+  const activeSosCount = activeSosAlerts.length;
 
   const navGroups: NavGroup[] = [
     {
@@ -106,6 +111,14 @@ export function AdminSidebar({ collapsed = false, onCloseMobile }: AdminSidebarP
         { label: "Packages & Routes", href: "/admin/packages", icon: Route },
         { label: "4x4 Safari Fleet", href: "/admin/fleet", icon: Truck },
         { label: "Guides & Drivers", href: "/admin/guides", icon: Users },
+        { label: "Weather Intelligence", href: "/admin/weather", icon: CloudSun },
+        {
+          label: "SOS Command",
+          href: "/admin/sos-alerts",
+          icon: ShieldAlert,
+          badge: activeSosCount > 0 ? activeSosCount : undefined,
+          badgeVariant: "rose",
+        },
         { label: "Merchandise", href: "/admin/merchandise", icon: ShoppingBag },
       ],
     },

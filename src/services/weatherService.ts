@@ -60,16 +60,16 @@ export interface ParkWeatherReport {
 // ─── Authoritative park reference data ───────────────────────────────────────
 // Coordinates are verified WGS84 for each national park headquarters/main gate.
 export const AMBER_PLAINS_PARKS: AmberPlainsPark[] = [
-  { id: "amboseli",     name: "Amboseli NP",         region: "Southern Rift",   lat: -2.6527,  lon: 37.2606,  elevationM: 1180 },
-  { id: "tsavo-east",   name: "Tsavo East NP",        region: "Coast Hinterland",lat: -2.5000,  lon: 38.5000,  elevationM: 300  },
-  { id: "tsavo-west",   name: "Tsavo West NP",        region: "Coast Hinterland",lat: -3.3800,  lon: 38.0100,  elevationM: 1000 },
-  { id: "maasai-mara",  name: "Maasai Mara NR",       region: "Mara Ecosystem",  lat: -1.5000,  lon: 35.1500,  elevationM: 1500 },
-  { id: "samburu",      name: "Samburu NR",            region: "Northern Frontier",lat: 0.6200,  lon: 37.5300,  elevationM: 870  },
-  { id: "lake-nakuru",  name: "Lake Nakuru NP",        region: "Rift Valley",    lat: -0.3600,  lon: 36.0900,  elevationM: 1759 },
-  { id: "aberdare",     name: "Aberdare NP",           region: "Central Highlands",lat:-0.3000, lon: 36.6500,  elevationM: 2600 },
-  { id: "mount-kenya",  name: "Mt Kenya NP",           region: "Central Highlands",lat:-0.1521, lon: 37.3084,  elevationM: 2000 },
-  { id: "meru",         name: "Meru NP",               region: "Northern Frontier",lat: 0.1500, lon: 38.2300,  elevationM: 1000 },
-  { id: "nairobi",      name: "Nairobi NP",            region: "Nairobi Metro",   lat:-1.3500,  lon: 36.8167,  elevationM: 1670 },
+  { id: "amboseli", name: "Amboseli NP", region: "Southern Rift", lat: -2.6527, lon: 37.2606, elevationM: 1180 },
+  { id: "tsavo-east", name: "Tsavo East NP", region: "Coast Hinterland", lat: -2.5000, lon: 38.5000, elevationM: 300 },
+  { id: "tsavo-west", name: "Tsavo West NP", region: "Coast Hinterland", lat: -3.3800, lon: 38.0100, elevationM: 1000 },
+  { id: "maasai-mara", name: "Maasai Mara NR", region: "Mara Ecosystem", lat: -1.5000, lon: 35.1500, elevationM: 1500 },
+  { id: "samburu", name: "Samburu NR", region: "Northern Frontier", lat: 0.6200, lon: 37.5300, elevationM: 870 },
+  { id: "lake-nakuru", name: "Lake Nakuru NP", region: "Rift Valley", lat: -0.3600, lon: 36.0900, elevationM: 1759 },
+  { id: "aberdare", name: "Aberdare NP", region: "Central Highlands", lat: -0.3000, lon: 36.6500, elevationM: 2600 },
+  { id: "mount-kenya", name: "Mt Kenya NP", region: "Central Highlands", lat: -0.1521, lon: 37.3084, elevationM: 2000 },
+  { id: "meru", name: "Meru NP", region: "Northern Frontier", lat: 0.1500, lon: 38.2300, elevationM: 1000 },
+  { id: "nairobi", name: "Nairobi NP", region: "Nairobi Metro", lat: -1.3500, lon: 36.8167, elevationM: 1670 },
 ];
 
 // ─── Open-Meteo WMO weather code label map ───────────────────────────────────
@@ -105,14 +105,14 @@ export function wmoToIcon(wmoCode: number): string {
 /** Determine the prevailing Kenyan safari season by calendar month (1-based). */
 export function getSafariSeason(month: number): SafariSeason {
   if (month >= 7 && month <= 10) return "Peak Dry Season";   // Jul–Oct: Great Migration
-  if (month >= 3 && month <= 5)  return "Long Rains";        // Mar–May: Green season
+  if (month >= 3 && month <= 5) return "Long Rains";        // Mar–May: Green season
   if (month >= 10 && month <= 12) return "Short Rains";      // Oct–Dec
   return "Shoulder Season";                                   // Jan–Feb, Jun
 }
 
 /** Wind degrees to compass bearing string */
 function degreesToCompass(deg: number): string {
-  const dirs = ["N","NE","E","SE","S","SW","W","NW"];
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
   return dirs[Math.round(deg / 45) % 8];
 }
 
@@ -204,6 +204,30 @@ export function generateSafariAdvisory(
 // ─── Open-Meteo fetch ─────────────────────────────────────────────────────────
 const OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast";
 
+interface OpenMeteoResponse {
+  current?: {
+    temperature_2m?: number;
+    apparent_temperature?: number;
+    relative_humidity_2m?: number;
+    wind_speed_10m?: number;
+    wind_direction_10m?: number;
+    precipitation?: number;
+    uv_index?: number;
+    weather_code?: number;
+    is_day?: number;
+    time?: string;
+  };
+  daily?: {
+    time?: string[];
+    temperature_2m_max?: number[];
+    temperature_2m_min?: number[];
+    precipitation_sum?: number[];
+    precipitation_probability_max?: number[];
+    weather_code?: number[];
+    uv_index_max?: number[];
+  };
+}
+
 /** Fetch current conditions and 7-day forecast for a single park. */
 export async function fetchParkWeather(park: AmberPlainsPark): Promise<ParkWeatherReport> {
   const params = new URLSearchParams({
@@ -242,34 +266,33 @@ export async function fetchParkWeather(park: AmberPlainsPark): Promise<ParkWeath
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data: any = await res.json();
+  const data = (await res.json()) as OpenMeteoResponse;
 
-  const c = data.current;
-  const d = data.daily;
+  const c = data.current ?? {};
+  const d = data.daily ?? {};
 
   const current: WeatherCurrentCondition = {
-    tempC:          parseFloat(c.temperature_2m ?? 0),
-    feelsLikeC:     parseFloat(c.apparent_temperature ?? 0),
-    humidity:       parseInt(c.relative_humidity_2m ?? 0, 10),
-    windKph:        parseFloat(c.wind_speed_10m ?? 0),
-    windDirection:  degreesToCompass(parseFloat(c.wind_direction_10m ?? 0)),
-    precipMm:       parseFloat(c.precipitation ?? 0),
-    uvIndex:        parseFloat(c.uv_index ?? 0),
-    wmoCode:        parseInt(c.weather_code ?? 0, 10),
-    isDay:          c.is_day === 1,
-    updatedAt:      c.time ?? new Date().toISOString(),
+    tempC: Number(c.temperature_2m ?? 0),
+    feelsLikeC: Number(c.apparent_temperature ?? 0),
+    humidity: Math.round(Number(c.relative_humidity_2m ?? 0)),
+    windKph: Number(c.wind_speed_10m ?? 0),
+    windDirection: degreesToCompass(Number(c.wind_direction_10m ?? 0)),
+    precipMm: Number(c.precipitation ?? 0),
+    uvIndex: Number(c.uv_index ?? 0),
+    wmoCode: Math.round(Number(c.weather_code ?? 0)),
+    isDay: c.is_day === 1,
+    updatedAt: c.time ?? new Date().toISOString(),
   };
 
-  const forecast: WeatherDailyForecast[] = (d.time as string[]).map(
+  const forecast: WeatherDailyForecast[] = (d.time ?? []).map(
     (date: string, i: number) => ({
       date,
-      maxTempC:            parseFloat(d.temperature_2m_max[i] ?? 0),
-      minTempC:            parseFloat(d.temperature_2m_min[i] ?? 0),
-      precipMm:            parseFloat(d.precipitation_sum[i] ?? 0),
-      precipProbability:   parseInt(d.precipitation_probability_max[i] ?? 0, 10),
-      wmoCode:             parseInt(d.weather_code[i] ?? 0, 10),
-      uvIndexMax:          parseFloat(d.uv_index_max[i] ?? 0),
+      maxTempC: Number(d.temperature_2m_max?.[i] ?? 0),
+      minTempC: Number(d.temperature_2m_min?.[i] ?? 0),
+      precipMm: Number(d.precipitation_sum?.[i] ?? 0),
+      precipProbability: Math.round(Number(d.precipitation_probability_max?.[i] ?? 0)),
+      wmoCode: Math.round(Number(d.weather_code?.[i] ?? 0)),
+      uvIndexMax: Number(d.uv_index_max?.[i] ?? 0),
     })
   );
 
