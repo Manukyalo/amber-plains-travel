@@ -100,12 +100,9 @@ export const QrCodeCard: React.FC<QrCodeCardProps> = ({
         <span>Scan or Download QR</span>
       </div>
 
-      <h4 className="font-serif text-xl sm:text-2xl text-white font-normal mb-1">
+      <h4 className="font-serif text-xl sm:text-2xl text-white font-normal mb-5">
         Official Guest App Pass
       </h4>
-      <p className="text-xs text-safari-sand/70 font-light mb-6">
-        Encodes the permanent company gateway. Zero personal or booking data is encoded.
-      </p>
 
       {/* QR Code Canvas Frame */}
       <div className="relative p-4 bg-safari-cream rounded-md border-2 border-gold-400/50 shadow-md">
@@ -125,41 +122,42 @@ export const QrCodeCard: React.FC<QrCodeCardProps> = ({
         )}
       </div>
 
-      {/* Stable URL preview with copy button */}
-      <div className="mt-5 w-full">
-        <div className="flex items-center justify-between px-3 py-2 bg-safari-night rounded border border-safari-border text-[11px] font-mono text-safari-sand/80">
-          <span className="truncate max-w-[200px]">{stableUrl}</span>
-          <button
-            onClick={handleCopyUrl}
-            aria-label="Copy stable app download URL"
-            className="text-gold-400 hover:text-gold-300 p-1 transition-colors"
-          >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Download Action Buttons for Print & Digital Collateral */}
+      {/* Admin-only URL copy & Print/Vector Collateral Downloads */}
       {showDownloads && (
-        <div className="mt-6 pt-5 border-t border-safari-border/70 w-full flex flex-col gap-2">
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={handleDownloadPng}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-safari-night hover:bg-safari-dark border border-safari-border text-white text-[11px] font-mono uppercase tracking-wider transition-colors"
-            >
-              <Download className="w-3.5 h-3.5 text-gold-400" /> PNG Format
-            </button>
-            <button
-              onClick={handleDownloadSvg}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-safari-night hover:bg-safari-dark border border-safari-border text-white text-[11px] font-mono uppercase tracking-wider transition-colors"
-            >
-              <Download className="w-3.5 h-3.5 text-gold-400" /> Vector SVG
-            </button>
+        <>
+          <div className="mt-5 w-full">
+            <div className="flex items-center justify-between px-3 py-2 bg-safari-night rounded border border-safari-border text-[11px] font-mono text-safari-sand/80">
+              <span className="truncate max-w-[200px]">{stableUrl}</span>
+              <button
+                onClick={handleCopyUrl}
+                aria-label="Copy stable app download URL"
+                className="text-gold-400 hover:text-gold-300 p-1 transition-colors"
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-          <span className="text-[10px] text-safari-sand/50 font-mono">
-            High-resolution vector for lodge folders & vehicle tags
-          </span>
-        </div>
+
+          <div className="mt-6 pt-5 border-t border-safari-border/70 w-full flex flex-col gap-2">
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={handleDownloadPng}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-safari-night hover:bg-safari-dark border border-safari-border text-white text-[11px] font-mono uppercase tracking-wider transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-gold-400" /> PNG Format
+              </button>
+              <button
+                onClick={handleDownloadSvg}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-safari-night hover:bg-safari-dark border border-safari-border text-white text-[11px] font-mono uppercase tracking-wider transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-gold-400" /> Vector SVG
+              </button>
+            </div>
+            <span className="text-[10px] text-safari-sand/50 font-mono">
+              High-resolution vector for lodge folders & vehicle tags
+            </span>
+          </div>
+        </>
       )}
     </div>
   );

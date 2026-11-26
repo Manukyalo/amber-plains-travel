@@ -147,9 +147,9 @@ export const AppLandingClient: React.FC<AppLandingClientProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Branded QR Code Generator & Print Vector Downloads */}
+        {/* Right Column: Branded QR Code */}
         <div className="lg:col-span-5 flex flex-col items-center">
-          <QrCodeCard showDownloads={true} className="w-full" />
+          <QrCodeCard showDownloads={false} className="w-full" />
         </div>
       </div>
 

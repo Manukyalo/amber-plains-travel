@@ -1,9 +1,6 @@
 import React from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Smartphone, WifiOff, Map, Compass, Bell, ArrowRight, Shield } from "lucide-react";
+import { Smartphone, WifiOff, Map, Compass, Bell } from "lucide-react";
 import { QrCodeCard } from "@/components/app/QrCodeCard";
-import { Button } from "@/components/ui/Button";
 
 export const AppPromoSection: React.FC = () => {
   const appFeatures = [
@@ -71,21 +68,11 @@ export const AppPromoSection: React.FC = () => {
                 </div>
               ))}
             </div>
-
-            {/* CTA action */}
-            <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Button href="/app" variant="primary" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Explore App & Download Pass
-              </Button>
-              <span className="text-xs font-mono text-safari-sand/60">
-                Phase 3 Expo Native Build · Free for all confirmed guests
-              </span>
-            </div>
           </div>
 
           {/* Right: Branded QR Code Card */}
           <div className="lg:col-span-5 flex justify-center">
-            <QrCodeCard showDownloads={true} className="w-full max-w-md" />
+            <QrCodeCard showDownloads={false} className="w-full max-w-md" />
           </div>
         </div>
       </div>
