@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -10,9 +11,10 @@ import {
   ArrowRight,
   Truck,
   CalendarCheck,
-  CreditCard,
   ShieldCheck,
   Calendar,
+  TrendingUp,
+  CheckCircle2,
 } from "lucide-react";
 import {
   currentAdminUser,
@@ -22,6 +24,7 @@ import {
   mockCallEvents,
   mockTransactions,
   mockMerchandise,
+  mockSuppliers,
 } from "@/data/adminMockData";
 import {
   TODAY_ISO,
@@ -30,8 +33,25 @@ import {
   isBookingActivePipeline,
   getUpcomingDepartures,
 } from "@/utils/bookingDates";
+import { evaluateBookingReadiness } from "@/services/readinessEngine";
 import { KpiCard, StatusBadge, Card } from "@/components/admin/ui/AdminUIKit";
 import { RevenueChart } from "@/components/admin/ui/RevenueChart";
+
+// Dynamic client-only import for MapLibre GL WebGL canvas
+const EastAfricaSafariMap = dynamic(
+  () =>
+    import("@/components/admin/geo/EastAfricaSafariMap").then(
+      (mod) => mod.EastAfricaSafariMap
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[420px] bg-safari-card border border-safari-border rounded-xl flex items-center justify-center text-xs font-mono text-safari-sand/50">
+        Loading East African Geographic Intelligence…
+      </div>
+    ),
+  }
+);
 
 const USD_TO_KES = 129;
 
@@ -64,12 +84,11 @@ function stageToBadgeVariant(
 }
 
 export default function AdminOverviewPage() {
-  // Real revenue calculated from immutable succeeded transaction rows
+  // 1. Authoritative Financial Metrics
   const totalRevenueUsd = mockTransactions
     .filter((t) => t.status === "succeeded")
     .reduce((sum, t) => sum + t.amountCents / 100, 0);
 
-  // Outstanding balances from all active (uncompleted / uncancelled) bookings
   const activeBookings = mockBookings.filter((b) =>
     isBookingActivePipeline(b, TODAY_ISO)
   );
@@ -77,8 +96,22 @@ export default function AdminOverviewPage() {
     (sum, b) => sum + b.balanceDueUsd,
     0
   );
+  const totalPipelineValueUsd = activeBookings.reduce(
+    (sum, b) => sum + b.totalSellingPriceUsd,
+    0
+  );
 
-  // In-field safari cruisers calculation
+  // Booking conversion: confirmed + in_safari + completed vs total bookings
+  const convertedCount = mockBookings.filter((b) => {
+    const s = computeBookingStage(b, TODAY_ISO);
+    return s === "confirmed" || s === "in_safari" || s === "completed";
+  }).length;
+  const conversionRatePct =
+    mockBookings.length > 0
+      ? Math.round((convertedCount / mockBookings.length) * 100)
+      : 0;
+
+  // 2. Fleet Utilization
   const inSafariBookings = mockBookings.filter((b) =>
     isBookingInSafariToday(b, TODAY_ISO)
   );
@@ -96,20 +129,49 @@ export default function AdminOverviewPage() {
       ? Math.round((vehiclesOnSafariToday / activeFleetVehicles.length) * 100)
       : 0;
 
-  // Upcoming field departures (start_date >= today, sorted ascending, limit 5)
+  // 3. Departure Readiness Board (evaluated by ReadinessEngine)
   const upcomingDepartures = getUpcomingDepartures(mockBookings, TODAY_ISO, 5);
+  const readinessReports = useMemo(
+    () =>
+      activeBookings.map((bk) =>
+        evaluateBookingReadiness(bk, mockVehicles, mockGuides, undefined, TODAY_ISO)
+      ),
+    [activeBookings]
+  );
+
+  const blockedDepartures = readinessReports.filter((r) => r.status === "blocked").length;
   const missedCalls = mockCallEvents.filter((c) => c.status === "missed").length;
   const lowStockCount = mockMerchandise.filter(
     (m) => m.status === "low_stock" || m.status === "out_of_stock"
   ).length;
-  const totalAlerts = missedCalls + Math.max(1, lowStockCount);
+  const contractBlackoutsCount = mockSuppliers.reduce(
+    (sum, s) => sum + s.blackoutDates.length,
+    0
+  );
+  const totalAlerts = missedCalls + lowStockCount + blockedDepartures;
 
   const firstName = currentAdminUser.name.split(" ")[0];
-  const recentPayments = mockTransactions.slice(0, 4);
+
+  // Destination performance derived from mockBookings
+  const destinationBreakdown = useMemo(() => {
+    const buckets: Record<string, { count: number; valueUsd: number }> = {};
+    mockBookings.forEach((b) => {
+      const slug = b.packageSlug ?? "";
+      const key = slug.includes("amboseli")
+        ? "Amboseli & Kilimanjaro"
+        : slug.includes("mara")
+        ? "Maasai Mara"
+        : "Tsavo & Swahili Coast";
+      if (!buckets[key]) buckets[key] = { count: 0, valueUsd: 0 };
+      buckets[key].count += 1;
+      buckets[key].valueUsd += b.totalSellingPriceUsd;
+    });
+    return Object.entries(buckets).map(([name, stats]) => ({ name, ...stats }));
+  }, []);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* ── Welcome Hero Banner ── */}
+      {/* ── A. Welcome Hero Banner ── */}
       <section className="relative rounded-2xl overflow-hidden border border-safari-border bg-safari-card">
         <div className="absolute inset-0">
           <Image
@@ -127,14 +189,16 @@ export default function AdminOverviewPage() {
           <div className="space-y-2.5 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-400/15 border border-gold-400/30 text-gold-300 text-xs font-mono">
               <Calendar className="w-3.5 h-3.5" />
-              <span>{formatOperationalDate(TODAY_ISO)} · Mombasa Duty Desk</span>
+              <span>{formatOperationalDate(TODAY_ISO)} · Operations Intelligence Centre</span>
             </div>
 
             <h1 className="font-serif text-3xl sm:text-4xl font-normal text-white tracking-tight">
               {getGreeting()}, {firstName}
             </h1>
             <p className="text-sm text-safari-sand/75 font-light">
-              Here is today&apos;s live safari pipeline, settled ledger telemetry, and field fleet dispatch across Kenya.
+              Executive command view across {activeBookings.length} active safaris ($
+              {totalPipelineValueUsd.toLocaleString()} pipeline), {conversionRatePct}% booking
+              conversion, and live East African park telemetry.
             </p>
           </div>
 
@@ -143,19 +207,19 @@ export default function AdminOverviewPage() {
               href="/admin/bookings"
               className="px-4 py-2.5 rounded-lg bg-safari-night/80 border border-safari-border text-xs font-mono text-safari-sand hover:text-white hover:border-gold-400/60 transition-colors"
             >
-              Manage Bookings
+              Bookings & CRM
             </Link>
             <Link
               href="/admin/costing"
               className="px-4 py-2.5 rounded-lg bg-gold-400 hover:bg-gold-300 text-safari-night font-mono text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm"
             >
-              Calculate Safari Costing
+              Costing & Margin Engine
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── KPI Cards (4) ── */}
+      {/* ── A. Executive KPI Cards (4) ── */}
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <KpiCard
           label="Settled Revenue"
@@ -169,7 +233,7 @@ export default function AdminOverviewPage() {
         <KpiCard
           label="Outstanding Balances"
           value={`$${totalBalanceDueUsd.toLocaleString(undefined, { minimumFractionDigits: 0 })}`}
-          subtext={`Across ${activeBookings.length} active bookings`}
+          subtext={`${activeBookings.length} active · ${conversionRatePct}% conversion`}
           icon={Clock}
           variant="gold"
         />
@@ -202,94 +266,192 @@ export default function AdminOverviewPage() {
         <KpiCard
           label="Actionable Alerts"
           value={totalAlerts}
-          subtext={`${missedCalls} missed call · ${lowStockCount} low stock`}
+          subtext={`${blockedDepartures} readiness · ${missedCalls} call · ${lowStockCount} stock`}
           icon={AlertTriangle}
           variant="rose"
         />
       </section>
 
-      {/* ── Analytics & Upcoming Field Departures ── */}
+      {/* ── B. Departure Readiness Board + C. Geographic Map ── */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-7">
-          <RevenueChart settledRevenueUsd={totalRevenueUsd} />
+          <EastAfricaSafariMap liveVehiclePings={[]} heightClassName="h-[420px]" />
         </div>
 
         <div className="lg:col-span-5">
           <Card noPadding className="overflow-hidden">
             <div className="p-5 border-b border-safari-border flex items-center justify-between">
               <div>
-                <h3 className="font-serif text-lg text-white">Upcoming Field Departures</h3>
+                <h3 className="font-serif text-lg text-white flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-gold-400" />
+                  Departure Readiness Board
+                </h3>
                 <p className="text-xs text-safari-sand/55">
-                  On or after {TODAY_ISO}
+                  Pre-departure checks across fleet, guides & payments
                 </p>
               </div>
               <Link
-                href="/admin/fleet"
-                className="text-xs font-mono text-gold-400 hover:text-gold-300 flex items-center gap-1"
+                href="/admin/bookings"
+                className="text-xs font-mono text-gold-400 hover:text-gold-300"
               >
-                Fleet <ArrowRight className="w-3.5 h-3.5" />
+                CRM →
               </Link>
             </div>
 
-            {upcomingDepartures.length === 0 ? (
-              <div className="p-8 text-center text-xs font-mono text-safari-sand/50 flex flex-col items-center gap-2">
-                <CalendarCheck className="w-6 h-6 text-safari-sand/30" />
-                <span>No upcoming field departures scheduled on or after {TODAY_ISO}.</span>
-              </div>
-            ) : (
-              <div className="divide-y divide-safari-border">
-                {upcomingDepartures.map((departure) => {
-                  const assignedGuide = mockGuides.find(
-                    (g) => g.id === departure.assignedGuideId
-                  );
-                  const assignedVehicle = mockVehicles.find(
-                    (v) => v.id === departure.assignedVehicleId
-                  );
-
-                  return (
-                    <div
-                      key={departure.id}
-                      className="p-4 hover:bg-safari-night/50 transition-colors space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-mono text-gold-400 uppercase tracking-wider block">
-                            {departure.startDate} · {departure.durationDays} Days
-                          </span>
-                          <h4 className="font-serif text-base text-white truncate">
-                            {departure.guest.fullName}
-                          </h4>
-                          <p className="text-xs text-safari-sand/60 truncate">
-                            {departure.customTitle}
-                          </p>
-                        </div>
-                        <StatusBadge
-                          status={departure.stage.replace("_", " ")}
-                          variant={stageToBadgeVariant(departure.stage)}
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-safari-sand/70">
-                        <span className="px-2 py-0.5 rounded bg-safari-night border border-safari-border">
-                          Guide: {assignedGuide ? assignedGuide.fullName : "Roster Pending"}
+            <div className="divide-y divide-safari-border max-h-[360px] overflow-y-auto">
+              {readinessReports.map((rep) => {
+                const missingItems = rep.checks.filter((c) => !c.passed);
+                return (
+                  <div key={rep.bookingId} className="p-4 space-y-2 hover:bg-safari-night/40">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-mono text-gold-400 block">
+                          {rep.referenceCode} · Departs {rep.startDate}
                         </span>
-                        <span className="px-2 py-0.5 rounded bg-safari-night border border-safari-border">
-                          {assignedVehicle ? assignedVehicle.registrationPlate : "Unassigned"}
-                        </span>
+                        <h4 className="font-serif text-base text-white truncate">
+                          {rep.guestName}
+                        </h4>
                       </div>
+                      <StatusBadge
+                        status={
+                          rep.status === "ready"
+                            ? `Ready (${rep.scorePct}%)`
+                            : rep.status === "blocked"
+                            ? `${rep.blockersCount} Blocker`
+                            : `${rep.warningsCount} Warning`
+                        }
+                        variant={
+                          rep.status === "ready"
+                            ? "confirmed"
+                            : rep.status === "blocked"
+                            ? "alert"
+                            : "pending"
+                        }
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            )}
+
+                    {missingItems.length === 0 ? (
+                      <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>All dispatch & financial gates cleared</span>
+                      </div>
+                    ) : (
+                      <ul className="space-y-1 text-[11px] font-mono">
+                        {missingItems.map((m) => (
+                          <li
+                            key={m.key}
+                            className={
+                              m.severity === "blocker" ? "text-rose-300" : "text-amber-300"
+                            }
+                          >
+                            • {m.label}: {m.detail}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </Card>
         </div>
       </section>
 
-      {/* ── Operational Sections: Pipeline & Action Items ── */}
+      {/* ── D. Financial Intelligence: Revenue Chart & Destination Breakdown ── */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Active Safari Pipeline + Recent Payments */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-7">
+          <RevenueChart settledRevenueUsd={totalRevenueUsd} />
+        </div>
+
+        <div className="lg:col-span-5 space-y-6">
+          <Card className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-serif text-lg text-white flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-gold-400" />
+                  Performance by Destination
+                </h3>
+                <p className="text-xs text-safari-sand/55">
+                  Quoted safari value across Kenya circuits
+                </p>
+              </div>
+              <Link
+                href="/admin/costing"
+                className="text-xs font-mono text-gold-400 hover:underline"
+              >
+                Costing →
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {destinationBreakdown.map((dest) => {
+                const maxDest = Math.max(
+                  ...destinationBreakdown.map((d) => d.valueUsd),
+                  1
+                );
+                const pct = Math.round((dest.valueUsd / maxDest) * 100);
+                return (
+                  <div key={dest.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-white">{dest.name}</span>
+                      <span className="text-gold-300 font-semibold">
+                        ${dest.valueUsd.toLocaleString()} ({dest.count})
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-safari-night overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gold-400"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* E. Management Action Centre */}
+          <Card className="space-y-3">
+            <h3 className="font-serif text-lg text-white flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-gold-400" />
+              Management Action Centre
+            </h3>
+            <div className="space-y-2.5 text-xs">
+              <div className="p-3 bg-safari-night rounded-lg border border-rose-500/40 text-rose-200 flex items-center justify-between gap-2">
+                <span>{missedCalls} urgent missed partner call awaiting callback</span>
+                <Link
+                  href="/admin/receptionist"
+                  className="font-mono text-gold-300 hover:underline shrink-0"
+                >
+                  Open →
+                </Link>
+              </div>
+              <div className="p-3 bg-safari-night rounded-lg border border-safari-border text-safari-sand/85 flex items-center justify-between gap-2">
+                <span>{contractBlackoutsCount} supplier blackout dates active in 2026</span>
+                <Link
+                  href="/admin/suppliers"
+                  className="font-mono text-gold-300 hover:underline shrink-0"
+                >
+                  Review →
+                </Link>
+              </div>
+              <div className="p-3 bg-safari-night rounded-lg border border-safari-border text-safari-sand/85 flex items-center justify-between gap-2">
+                <span>{lowStockCount} merchandise SKU(s) below reorder threshold</span>
+                <Link
+                  href="/admin/merchandise"
+                  className="font-mono text-gold-300 hover:underline shrink-0"
+                >
+                  Restock →
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* ── Active Safari Pipeline & Upcoming Field Departures ── */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8">
           <Card noPadding className="overflow-hidden">
             <div className="p-5 border-b border-safari-border flex items-center justify-between">
               <div>
@@ -360,181 +522,58 @@ export default function AdminOverviewPage() {
               </table>
             </div>
           </Card>
-
-          {/* Recent Payments Mini-Ledger */}
-          <Card noPadding className="overflow-hidden">
-            <div className="p-5 border-b border-safari-border flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-gold-400" />
-                <h3 className="font-serif text-lg text-white">Recent Payments</h3>
-              </div>
-              <Link
-                href="/admin/payments"
-                className="text-xs font-mono text-gold-400 hover:text-gold-300 flex items-center gap-1"
-              >
-                Full Ledger <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs min-w-[520px]">
-                <thead className="bg-safari-night/70 text-[10px] font-mono uppercase tracking-wider text-safari-sand/60 border-b border-safari-border">
-                  <tr>
-                    <th className="py-2.5 px-4">Booking Ref</th>
-                    <th className="py-2.5 px-4">Gateway</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-safari-border">
-                  {recentPayments.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-safari-night/40 transition-colors">
-                      <td className="py-3 px-4 font-mono font-semibold text-white">
-                        {tx.bookingReference}
-                      </td>
-                      <td className="py-3 px-4 font-mono uppercase text-safari-sand/70">
-                        {tx.provider}
-                      </td>
-                      <td className="py-3 px-4">
-                        <StatusBadge
-                          status={tx.status}
-                          variant={
-                            tx.status === "succeeded"
-                              ? "confirmed"
-                              : tx.status === "pending"
-                                ? "pending"
-                                : "alert"
-                          }
-                        />
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-white">
-                        ${(tx.amountCents / 100).toLocaleString()} {tx.currency}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
         </div>
 
-        {/* Right: Duty Officer Action Items, Fleet Availability & CMS Pulse */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Duty Officer Action Items */}
-          <Card className="space-y-4">
-            <h3 className="font-serif text-lg text-white flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-gold-400" />
-              Duty Officer Action Items
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3.5 bg-safari-night rounded-lg border border-rose-500/40 text-rose-200 space-y-1">
-                <span className="font-mono text-[10px] uppercase text-rose-400 block font-semibold">
-                  Missed Call Follow-Up
-                </span>
-                <p>Nairobi partner call +254 722 400 918 marked urgent same-day request.</p>
-                <Link
-                  href="/admin/receptionist"
-                  className="text-xs font-mono text-gold-300 hover:underline block pt-1"
-                >
-                  View Transcript & Callback →
-                </Link>
+        <div className="lg:col-span-4">
+          <Card noPadding className="overflow-hidden">
+            <div className="p-5 border-b border-safari-border flex items-center justify-between">
+              <div>
+                <h3 className="font-serif text-lg text-white">Upcoming Departures</h3>
+                <p className="text-xs text-safari-sand/55">On or after {TODAY_ISO}</p>
               </div>
-
-              <div className="p-3.5 bg-safari-night rounded-lg border border-safari-border text-safari-sand/80 space-y-1">
-                <span className="font-mono text-[10px] uppercase text-gold-400 block font-semibold">
-                  Contract Review Due
-                </span>
-                <p>Tortilis Camp 2026 peak season allocation has 4 blackout dates to verify.</p>
-                <Link
-                  href="/admin/suppliers"
-                  className="text-xs font-mono text-gold-300 hover:underline block pt-1"
-                >
-                  Inspect Contract Document →
-                </Link>
-              </div>
-
-              <div className="p-3.5 bg-safari-night rounded-lg border border-safari-border text-safari-sand/80 space-y-1">
-                <span className="font-mono text-[10px] uppercase text-emerald-400 block font-semibold">
-                  Vehicle Maintenance Complete
-                </span>
-                <p>Cruiser KDG 893L completed 10,000km scheduled service at Mombasa Depot.</p>
-                <Link
-                  href="/admin/fleet"
-                  className="text-xs font-mono text-gold-300 hover:underline block pt-1"
-                >
-                  Update Vehicle Odometer →
-                </Link>
-              </div>
-            </div>
-          </Card>
-
-          {/* Fleet Availability Snapshot */}
-          <Card className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif text-lg text-white">Fleet Availability</h3>
-              <Link href="/admin/fleet" className="text-xs font-mono text-gold-400 hover:underline">
-                Roster →
+              <Link
+                href="/admin/fleet"
+                className="text-xs font-mono text-gold-400 hover:text-gold-300"
+              >
+                Fleet →
               </Link>
             </div>
-            <div className="space-y-2.5">
-              {mockVehicles.map((v) => (
-                <div
-                  key={v.id}
-                  className="p-3 rounded-lg bg-safari-night border border-safari-border flex items-center justify-between gap-2 text-xs"
-                >
-                  <div className="min-w-0">
-                    <span className="font-mono font-bold text-white block">
-                      {v.registrationPlate}
-                    </span>
-                    <span className="text-safari-sand/60 truncate block">
-                      {v.makeModel}
-                    </span>
-                  </div>
-                  <StatusBadge
-                    status={v.status.replace("_", " ")}
-                    variant={
-                      v.status === "available"
-                        ? "confirmed"
-                        : v.status === "on_safari"
-                          ? "in_safari"
-                          : "alert"
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </Card>
 
-          {/* Quick CMS & App Distribution Pulse */}
-          <Card className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif text-lg text-white">App & Website CMS</h3>
-              <ShieldCheck className="w-4 h-4 text-gold-400" />
-            </div>
-            <div className="space-y-2 text-xs font-mono text-safari-sand/80">
-              <div className="flex justify-between py-1.5 border-b border-safari-border">
-                <span>Stable QR URL:</span>
-                <span className="text-gold-300 font-bold truncate max-w-[160px]">
-                  amberplains.co.ke/app
-                </span>
+            {upcomingDepartures.length === 0 ? (
+              <div className="p-8 text-center text-xs font-mono text-safari-sand/50 flex flex-col items-center gap-2">
+                <CalendarCheck className="w-6 h-6 text-safari-sand/30" />
+                <span>No upcoming departures on or after {TODAY_ISO}.</span>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-safari-border">
-                <span>App Store Status:</span>
-                <span className="text-amber-400">Phase 3 Coming Soon</span>
+            ) : (
+              <div className="divide-y divide-safari-border">
+                {upcomingDepartures.map((departure) => {
+                  const assignedGuide = mockGuides.find(
+                    (g) => g.id === departure.assignedGuideId
+                  );
+                  const assignedVehicle = mockVehicles.find(
+                    (v) => v.id === departure.assignedVehicleId
+                  );
+                  return (
+                    <div key={departure.id} className="p-4 space-y-1.5">
+                      <span className="text-[10px] font-mono text-gold-400 uppercase block">
+                        {departure.startDate} · {departure.durationDays}D
+                      </span>
+                      <h4 className="font-serif text-base text-white">
+                        {departure.guest.fullName}
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5 text-[10px] font-mono text-safari-sand/75">
+                        <span className="px-2 py-0.5 rounded bg-safari-night border border-safari-border">
+                          {assignedGuide ? assignedGuide.fullName : "Guide Pending"}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-safari-night border border-safari-border">
+                          {assignedVehicle ? assignedVehicle.registrationPlate : "No Cruiser"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex justify-between py-1.5 border-b border-safari-border">
-                <span>VIP Waitlist Leads:</span>
-                <span className="text-white">76 Confirmed Guests</span>
-              </div>
-            </div>
-
-            <Link
-              href="/admin/cms"
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-safari-night hover:bg-safari-surface border border-safari-border text-xs font-mono text-gold-400 transition-colors"
-            >
-              Manage CMS & App Links →
-            </Link>
+            )}
           </Card>
         </div>
       </section>
